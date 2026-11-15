@@ -121,7 +121,8 @@ result = policy.predict_action(obs_dict)
 
 - [x] 每个核心模块都有 shape test 和有限值检查。
 - [x] 小配置下固定输入和同名权重的 Jittor/PyTorch 前向、loss 和 168 个梯度在容差内一致。（FPJ-028）
-- [x] CFM 的时间采样、broadcast 和当前 `target_mode="code"` 梯度语义已有测试；论文式 detached EMA target 尚未实现。
+- [x] CFM 的时间采样、broadcast 和 `target_mode="code"` 梯度语义已有测试；detached 模式使用独立、
+      冻结的编码器 + U-Net target，覆盖梯度隔离、EMA 更新和 checkpoint/续训。正式效果对照尚未运行。
 - [x] 合成数据上的 10-batch 过拟合测试通过。（FPJ-023：32 个固定窗口，动作误差 5.49 → 1.42，降低 74%；loss 1.4e-4 → 1.3e-5）
 - [x] policy/trainer checkpoint 保存后重载，固定输入结果一致；配置不匹配时拒绝加载。
 
@@ -179,6 +180,9 @@ OMP_NUM_THREADS=4 python scripts/train_smoke.py \
 OMP_NUM_THREADS=2 MUJOCO_GL=egl python scripts/rollout.py \
     --data data/reach-v3.zarr --checkpoint outputs/smoke/policy.ckpt \
     --episodes 5 --max-steps 200 --out outputs/rollout
+
+# detached target 的小 CPU 资源探测（不是正式实验）
+python scripts/detached_target_probe.py
 ```
 
 ### 防止走偏
@@ -234,7 +238,8 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
 - 上游 PyTorch FlowPolicy：同一示范、同一任务、尽量相同配置。
 - Jittor FlowPolicy：正式结果。
 - 可选消融：统一 1024 点 vs. 官方 runner 的 512 点。
-- 可选消融：公开代码的同网络 target vs. 论文描述的 EMA/stop-gradient target。
+- 下一项消融：在完全相同的数据、seed、点数和训练预算下，对比公开代码的同网络 target 与
+  detached EMA/stop-gradient target；FPJ-034 只完成实现、恢复语义和小 CPU 资源测量。
 
 ### 验证清单
 
@@ -276,7 +281,7 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
 ## 8. 最终验收
 
 - [ ] 新机器按 README 能建立环境。
-- [x] Jittor 主环境测试 `213 passed, 1 skipped`；跳过的 PyTorch 模块由独立 parity-env 的 170 项检查覆盖，但不计作主测试 passed。
+- [x] Jittor 主环境测试 `246 passed, 1 skipped`；跳过的 PyTorch 模块由独立 parity-env 的 170 项检查覆盖，但不计作主测试 passed。
 - [x] 一条命令生成示范，一条命令训练，一条命令评测。
 - [x] 模型训练和推理确认使用 Jittor。
 - [x] 两个任务的低预算结果可追溯到配置、seed、checkpoint 和日志。

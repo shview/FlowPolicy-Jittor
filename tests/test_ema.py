@@ -1,4 +1,4 @@
-"""Tests for the paper-faithful EMA target (FPJ-028)."""
+"""Tests for stored EMA shadows and the detached EMA target policy."""
 
 import numpy as np
 import pytest
@@ -6,7 +6,11 @@ import pytest
 jt = pytest.importorskip("jittor")
 
 from flowpolicy_jittor.model import FlowPolicy, LinearNormalizer  # noqa: E402
-from flowpolicy_jittor.training import EmaModel, Trainer  # noqa: E402
+from flowpolicy_jittor.training import (  # noqa: E402
+    DetachedEmaTarget,
+    EmaModel,
+    Trainer,
+)
 
 
 @pytest.fixture(autouse=True)
@@ -63,9 +67,9 @@ def _batch(seed=5, batch_size=2, num_points=8):
     }
 
 
-def _ready_policy(num_points=8):
+def _ready_policy(num_points=8, **overrides):
     data = _batch(num_points=num_points)
-    policy = _policy(num_points=num_points)
+    policy = _policy(num_points=num_points, **overrides)
     policy.set_normalizer(
         LinearNormalizer().fit(
             {
@@ -199,6 +203,33 @@ def test_ema_state_dict_round_trip_and_validation():
         EmaModel(policy, decay=0.5).load_state_dict(missing)
 
 
+def test_stored_ema_rejects_nonfinite_and_late_metadata_atomically():
+    policy, _ = _ready_policy()
+    ema = EmaModel(policy, decay=0.9)
+    before = ema.state_dict()
+
+    late = ema.state_dict()
+    late["parameters"][0] = np.asarray(late["parameters"][0]) + 1.0
+    late["optimization_step"] = -1
+    with pytest.raises(ValueError, match="optimization_step"):
+        ema.load_state_dict(late)
+    for left, right in zip(ema.state_dict()["parameters"], before["parameters"]):
+        np.testing.assert_array_equal(left, right)
+
+    nonfinite = ema.state_dict()
+    nonfinite["parameters"][0].flat[0] = np.nan
+    with pytest.raises(ValueError, match="finite"):
+        ema.load_state_dict(nonfinite)
+    for left, right in zip(ema.state_dict()["parameters"], before["parameters"]):
+        np.testing.assert_array_equal(left, right)
+
+    negative_warmup = ema.state_dict()
+    negative_warmup["warmup_steps"] = -7
+    with pytest.raises(ValueError, match="warmup_steps"):
+        ema.load_state_dict(negative_warmup)
+    assert ema.warmup_steps == before["warmup_steps"]
+
+
 def test_invalid_decay_is_rejected():
     policy, _ = _ready_policy()
     for decay in (0.0, -0.5, 1.5, float("nan")):
@@ -242,3 +273,118 @@ def test_trainer_without_ema_records_null():
     assert trainer._trainer_payload()["ema"] is None
     record = trainer.history[-1]
     assert "ema_decay" not in record
+
+
+def test_detached_target_is_separate_frozen_and_updates_only_through_ema():
+    policy, data = _ready_policy(target_mode="detached")
+    trainer = Trainer(policy, total_steps=2, lr=1e-2, seed=7, ema_decay=0.5)
+    assert isinstance(trainer.ema, DetachedEmaTarget)
+    target = trainer.ema.target_policy
+    assert target.trainable_parameters() == []
+    assert not {
+        id(parameter) for parameter in policy.trainable_parameters()
+    } & {id(parameter) for parameter in target.parameters()}
+
+    target_before = _weights(target)
+    noise, times = trainer._step_inputs(data["action"].shape, 1)
+    loss, _ = policy.compute_loss(
+        data, noise=noise, t=times, target_policy=target
+    )
+    trainer.optimizer.step(loss)
+    for name, value in target_before.items():
+        np.testing.assert_array_equal(_weights(target)[name], value)
+
+    online_after = _weights(policy)
+    decay = trainer.ema.update(policy)
+    target_after = _weights(target)
+    averaged = trainer.ema._names
+    moved = 0
+    for name in averaged:
+        expected = decay * target_before[name] + (1.0 - decay) * online_after[name]
+        np.testing.assert_allclose(target_after[name], expected, rtol=1e-5, atol=1e-6)
+        moved += int(not np.array_equal(target_after[name], target_before[name]))
+    assert moved > 0
+    assert trainer.ema.optimization_step == 1
+    assert all(parameter.is_stop_grad() for parameter in target.parameters())
+
+
+def test_detached_trainer_requires_ema_decay():
+    policy, _ = _ready_policy(target_mode="detached")
+    with pytest.raises(ValueError, match="requires ema_decay"):
+        Trainer(policy, total_steps=2)
+
+
+def test_detached_checkpoint_restores_target_and_continues(tmp_path):
+    policy, data = _ready_policy(target_mode="detached")
+    trainer = Trainer(
+        policy, total_steps=4, lr=1e-2, warmup_steps=1, seed=9, ema_decay=0.9
+    )
+    trainer.fit(data, steps=2)
+    path = tmp_path / "detached.ckpt"
+    trainer.save_checkpoint(path)
+
+    other_policy, _ = _ready_policy(target_mode="detached")
+    other = Trainer(
+        other_policy, total_steps=4, lr=1e-2, warmup_steps=1, seed=9, ema_decay=0.9
+    )
+    other.load_checkpoint(path)
+    assert other.global_step == 2
+    assert other.ema.optimization_step == 2
+    for name, value in _weights(trainer.ema.target_policy).items():
+        np.testing.assert_array_equal(_weights(other.ema.target_policy)[name], value)
+    record = other.train_step(data)
+    assert record["step"] == 3
+    assert other.ema.optimization_step == 3
+
+    code_policy, _ = _ready_policy()
+    code_trainer = Trainer(
+        code_policy, total_steps=4, lr=1e-2, warmup_steps=1, seed=9, ema_decay=0.9
+    )
+    with pytest.raises(ValueError, match="target_mode"):
+        code_trainer.load_checkpoint(path)
+
+    payload = jt.load(str(path))
+    payload["trainer"]["ema"]["kind"] = "stored-shadow"
+    incompatible = tmp_path / "wrong-target-kind.ckpt"
+    jt.save(payload, str(incompatible))
+    fresh_policy, _ = _ready_policy(target_mode="detached")
+    fresh = Trainer(
+        fresh_policy,
+        total_steps=4,
+        lr=1e-2,
+        warmup_steps=1,
+        seed=9,
+        ema_decay=0.9,
+    )
+    online_before = _weights(fresh_policy)
+    target_before = _weights(fresh.ema.target_policy)
+    optimizer_before = fresh.optimizer_state()
+    with pytest.raises(ValueError, match="does not describe a detached target"):
+        fresh.load_checkpoint(incompatible)
+    assert fresh.global_step == 0
+    assert fresh.history == []
+    for name, value in online_before.items():
+        np.testing.assert_array_equal(_weights(fresh_policy)[name], value)
+    for name, value in target_before.items():
+        np.testing.assert_array_equal(_weights(fresh.ema.target_policy)[name], value)
+    optimizer_after = fresh.optimizer_state()
+    assert optimizer_after["n_step"] == optimizer_before["n_step"]
+    for key in ("m", "values"):
+        for left, right in zip(optimizer_before[key], optimizer_after[key]):
+            np.testing.assert_array_equal(left, right)
+
+
+def test_detached_target_rejects_late_metadata_before_mutating_weights():
+    policy, _ = _ready_policy(target_mode="detached")
+    trainer = Trainer(policy, total_steps=2, ema_decay=0.9)
+    state = trainer.ema.state_dict()
+    first_name = next(iter(state["target_policy"]))
+    state["target_policy"][first_name] = (
+        np.asarray(state["target_policy"][first_name]) + 1.0
+    )
+    state["optimization_step"] = -1
+    before = _weights(trainer.ema.target_policy)
+    with pytest.raises(ValueError, match="optimization_step"):
+        trainer.ema.load_state_dict(state)
+    for name, value in before.items():
+        np.testing.assert_array_equal(_weights(trainer.ema.target_policy)[name], value)

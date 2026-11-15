@@ -6,10 +6,10 @@ evaluates both ``v_t`` and ``v_r`` with the current model and allows gradients
 through both calls.  This differs from the paper's EMA-target notation and
 from the repository's unused generic ``losses.py``, which detaches ``v_r``.
 
-``target_mode='detached'`` is provided only as an integration hook for a
-future EMA model.  It requires an explicit ``target_model`` and must not be
-described as paper-faithful until the top-level policy actually maintains and
-checkpoints EMA parameters.
+``target_mode='detached'`` requires an explicit, separate target model.  The
+top-level policy/trainer own that target's encoder, weights, EMA update and
+checkpoint lifecycle; this loss only consumes the already-detached target
+prediction.
 """
 
 from __future__ import annotations
@@ -157,6 +157,8 @@ class ConsistencyFlowMatchingLoss(jt.Module):
         condition_mask: Optional[jt.Var] = None,
         condition_data: Optional[jt.Var] = None,
         target_model=None,
+        target_global_cond: Optional[jt.Var] = None,
+        target_local_cond: Optional[jt.Var] = None,
     ) -> Tuple[jt.Var, Dict[str, jt.Var]]:
         target = self._validate_trajectory(target, "target")
         batch_size, horizon, action_dim = _shape(target)
@@ -228,8 +230,16 @@ class ConsistencyFlowMatchingLoss(jt.Module):
                         target_model,
                         x_r,
                         r_value * self.time_scale,
-                        global_cond,
-                        local_cond,
+                        (
+                            global_cond
+                            if target_global_cond is None
+                            else target_global_cond
+                        ),
+                        (
+                            local_cond
+                            if target_local_cond is None
+                            else target_local_cond
+                        ),
                     ).detach().stop_grad()
             else:
                 if target_model is not None and target_model is not model:

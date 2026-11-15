@@ -185,6 +185,12 @@ def main(argv=None) -> int:
     parser.add_argument("--num-points", type=int, default=1024)
     parser.add_argument("--max-steps", type=int, default=200)
     parser.add_argument("--action-slice-mode", choices=("code", "exact"), default="code")
+    parser.add_argument(
+        "--target-mode",
+        choices=("code", "detached"),
+        default="code",
+        help="must match the training checkpoint configuration",
+    )
     parser.add_argument("--down-dims", type=int, nargs="+", default=[32, 64])
     parser.add_argument("--embed-dim", type=int, default=32)
     parser.add_argument("--encoder-out", type=int, default=64)
@@ -235,6 +241,7 @@ def main(argv=None) -> int:
         var_fc_hidden_dim=args.var_fc_hidden_dim,
         seed=args.seed,
         action_slice_mode=args.action_slice_mode,
+        target_mode=args.target_mode,
     )
     checkpoint_extra = policy.load_checkpoint(args.checkpoint)
 
@@ -267,6 +274,7 @@ def main(argv=None) -> int:
         var_fc_hidden_dim=args.var_fc_hidden_dim,
         seed=args.seed,
         action_slice_mode=args.action_slice_mode,
+        target_mode=args.target_mode,
     )
     fresh_policy.load_checkpoint(args.checkpoint)
     fresh = np.asarray(fresh_policy.predict_action(window, noise=fixed_noise)["action"])
@@ -320,6 +328,7 @@ def main(argv=None) -> int:
             "kernel_size": args.kernel_size,
             "n_groups": args.n_groups,
             "var_fc_hidden_dim": args.var_fc_hidden_dim,
+            "target_mode": args.target_mode,
         },
         "action_slice_mode": args.action_slice_mode,
         "policy_action_bounds": [int(value) for value in policy._action_bounds()],

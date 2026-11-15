@@ -1,0 +1,99 @@
+{
+  "schema_version": 1,
+  "scope": "small CPU resource probe; not a paper recipe or formal experiment",
+  "config": {
+    "batch_size": 2,
+    "num_points": 8,
+    "horizon": 4,
+    "down_dims": [
+      8,
+      16,
+      32
+    ],
+    "compile_warmup_steps": 3,
+    "measured_steps": 5,
+    "seed": 34,
+    "omp_num_threads": "1"
+  },
+  "results": {
+    "code_no_ema": {
+      "mode": "code_no_ema",
+      "target_mode": "code",
+      "ema_enabled": false,
+      "construction_seconds": 0.05429423900204711,
+      "rss_before_mib": 63.375,
+      "rss_after_construction_mib": 69.1875,
+      "construction_rss_delta_mib": 5.8125,
+      "construction_peak_delta_mib": 5.8125,
+      "step_seconds": [
+        0.059006090988987125,
+        0.04837449500337243,
+        0.057170525993569754,
+        0.0595001420006156,
+        0.14528836899262387
+      ],
+      "mean_step_seconds": 0.07386792459583376,
+      "median_step_seconds": 0.059006090988987125,
+      "final_rss_mib": 105.9375,
+      "final_peak_mib": 105.9375,
+      "online_trainable_parameters": 102676,
+      "target_trainable_parameters": null,
+      "ema_optimization_step": null
+    },
+    "code_stored_ema": {
+      "mode": "code_stored_ema",
+      "target_mode": "code",
+      "ema_enabled": true,
+      "construction_seconds": 0.05620881399954669,
+      "rss_before_mib": 62.98046875,
+      "rss_after_construction_mib": 69.73046875,
+      "construction_rss_delta_mib": 6.75,
+      "construction_peak_delta_mib": 6.75,
+      "step_seconds": [
+        0.05517333699390292,
+        0.05924591100483667,
+        0.06052420499327127,
+        0.05844454999896698,
+        0.20423074199061375
+      ],
+      "mean_step_seconds": 0.08752374899631832,
+      "median_step_seconds": 0.05924591100483667,
+      "final_rss_mib": 107.04296875,
+      "final_peak_mib": 107.04296875,
+      "online_trainable_parameters": 102676,
+      "target_trainable_parameters": null,
+      "ema_optimization_step": 8
+    },
+    "detached_ema": {
+      "mode": "detached_ema",
+      "target_mode": "detached",
+      "ema_enabled": true,
+      "construction_seconds": 0.09792269300669432,
+      "rss_before_mib": 62.97265625,
+      "rss_after_construction_mib": 72.53515625,
+      "construction_rss_delta_mib": 9.5625,
+      "construction_peak_delta_mib": 9.5625,
+      "step_seconds": [
+        0.05122670500713866,
+        0.05029580899281427,
+        0.05565355799626559,
+        0.0538911899930099,
+        0.13935407501412556
+      ],
+      "mean_step_seconds": 0.0700842674006708,
+      "median_step_seconds": 0.0538911899930099,
+      "final_rss_mib": 104.78515625,
+      "final_peak_mib": 104.78515625,
+      "online_trainable_parameters": 102676,
+      "target_trainable_parameters": 0,
+      "ema_optimization_step": 8
+    }
+  },
+  "detached_minus_code_no_ema": {
+    "construction_rss_delta_mib": 3.75,
+    "mean_step_seconds": -0.003783657195162965,
+    "mean_step_ratio": 0.9487780763319785,
+    "median_step_seconds": -0.005114900995977223,
+    "median_step_ratio": 0.9133157118147028
+  }
+}

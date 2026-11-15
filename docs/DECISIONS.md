@@ -282,3 +282,27 @@ policy/trainer checkpoint SHA256、三组 20-episode 明细及汇总。原始 Za
 栈、30 epochs 和 released-code target 都与论文完整配方不同，因此不能把 31.67% 与论文表格做数值比较，
 也不能声称已经复现论文成功率。
 
+## D021：detached EMA target 必须是完整独立策略，并与 stored EMA 分开
+
+**决定**：`target_mode="code"` 继续作为默认值，保持 released code 的梯度语义。只有显式选择
+`target_mode="detached"` 并提供 `ema_decay` 时，`Trainer` 才创建 `DetachedEmaTarget`：它包含与在线
+policy 分离的 observation encoder 和 U-Net，全部参数停止梯度；每一步先用旧 target 计算 `v_r`，再更新
+在线 optimizer，最后执行 target EMA。原有 `EmaModel` 保留为 code 模式下的 stored shadow，不冒充 loss target。
+
+**保存与恢复**：trainer schema 升为 2，显式记录 `target_mode`。detached checkpoint 保存在线 policy、
+AdamW/调度、更新计数和完整 target policy 状态；code/detached 或 stored/detached 状态不匹配时直接报错。
+schema 1 缺少目标语义，当前版本给出明确迁移错误，而不是猜测并静默恢复。AdamW 的两个矩、`eps`、
+`betas`、`weight_decay` 都经过 shape/dtype/有限值校验并恢复；policy、optimizer、target 任一环节失败时，
+trainer 整体回滚到加载前状态。CLI 恢复还要求 EMA decay/warmup 与 checkpoint 相同，摘要和配置哈希记录
+实际生效值，避免“按 0.9 训练却标成 0.5”。checkpoint 的 immutable provenance 进一步绑定数据树
+SHA256、batch size、epoch/step 预算、模型、预处理和 target 配置；恢复时要求
+`global_step == optimizer.n_step == EMA optimization_step`，并校验最近 50 步 history 与学习率调度。
+因此不能把不同数据或不同 batch 的两个阶段拼成一次训练后只报告后一阶段配置。
+
+**资源边界**：`scripts/detached_target_probe.py` 在独立 CPU 进程里比较 code 无 EMA、code stored EMA 和
+detached EMA；先做三步 JIT warm-up，再测五步，并记录当前/峰值 RSS。这个小配置只能回答实现开销，
+不能推导完整 512/1024/2048 模型的显存或成功率。本次记录中 detached 构造 RSS 增量比无 EMA code
+多 3.75 MiB，五步中位数为 53.9 ms 对 59.0 ms；短测没有显示减速，但不能据此声称 detached 更快。
+原始记录在 `evidence/fpj034/resource_probe.json`。正式同预算 target 对照留给 FPJ-035，且 FPJ-034
+不授权重启云端实例。
+

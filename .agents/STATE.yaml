@@ -27,20 +27,20 @@ environment:
 
 baseline:
   command: "wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q"
-  result: "227 passed, 1 skipped"
+  result: "246 passed, 1 skipped"
   skipped:
     - test: "tests/test_conv1d_parity.py"
       reason: "The core Jittor environment does not install PyTorch; conv1d/Autograd parity is now also measured end to end by scripts/parity_check.py in the separate parity-env."
-  note: "FPJ-033 gate reran the exact command: 227 passed, 1 skipped, 32 warnings in 163.53s. Do not count the skipped PyTorch parity module as passed. The previously intermittent test_top_level_adamw_updates_active_but_not_frozen_parameters was hardened in FPJ-030 (explicit seed, measured assertion) and passed 20/20 single runs plus 3/3 whole-file runs; the original failure was never reproduced, so no root cause is claimed."
+  note: "FPJ-034 used the user-requested single final full run: 246 passed, 1 skipped, 48 warnings in 193.76s. Do not count the skipped PyTorch parity module as passed. Detached target, atomic trainer resume, immutable data/config provenance and the AP-discovered counter/history/stored-EMA cases are included."
 
 current:
-  task_id: FPJ-034
-  title: "Detached EMA target for the paper-described loss"
+  task_id: FPJ-035
+  title: "Released-code versus detached EMA target comparison"
   attempt: 1
   stage: implementation
   status: ready
   owner: null
-  last_handoff_id: FPJ033-GATE-01
+  last_handoff_id: FPJ034-GATE-01
   next_stage: verification
   role_handoffs:
     implementation: null
@@ -49,10 +49,9 @@ current:
     quality: null
     gate: null
   objective: >-
-    Implement a true detached EMA target policy for the paper-described v_r loss target while
-    retaining the released-code target mode as the default and preserving explicit checkpoint,
-    resume and resource semantics. Verify gradient isolation and EMA-only updates on a small CPU
-    configuration before any later target-mode experiment.
+    Compare released-code and detached-EMA target semantics under an exactly matched local CPU
+    dataset, model, seed and update budget. Report training loss, stability, resource cost and
+    closed-loop outcomes before deciding whether a later cloud/full-channel comparison is useful.
   scope:
     allowed_paths:
       - README.md
@@ -60,8 +59,8 @@ current:
       - scripts/**
       - src/**
       - tests/**
-      - outputs/fpj034/**
-      - evidence/fpj034/**
+      - outputs/fpj035/**
+      - evidence/fpj035/**
       - .agents/STATE.yaml
       - .agents/HANDOFFS.md
       - .agents/QUEUE.md
@@ -71,31 +70,32 @@ current:
       - data/button-press-wall-v3.zarr/**
       - data/reach-wall-v3.zarr/**
       - evidence/fpj033/**
+      - evidence/fpj034/**
   acceptance:
-    - "Add an explicit detached-EMA target mode in which v_r is computed by a target policy that is a separate model/state from the online policy; target_mode='code' remains behaviorally unchanged and stays the default."
-    - "Define and test target initialization and update ordering; target parameters receive no optimizer gradient, are excluded from online trainable parameters and change only through the documented EMA update."
-    - "Trainer checkpoint save/load validates and restores the online policy, optimizer/scheduler state, EMA target state and update counters; resume is covered, and legacy/incompatible checkpoints are either supported explicitly or rejected clearly rather than silently changing target semantics."
-    - "Small CPU configurations cover shape and finite-value behavior, gradient isolation, EMA numerical updates, checkpoint round-trip and continuation; failures report actionable configuration/state mismatches."
-    - "Measure the detached-target CPU memory/time overhead on a documented small configuration before considering a full-channel run; no cloud spend or formal target comparison is part of FPJ-034."
-    - "Documentation distinguishes released-code target, detached EMA target and stored-but-unused EMA weights, and does not claim paper-faithful reproduction before gate approval."
-    - "The exact full pytest baseline passes, with skipped tests reported separately."
+    - "The experiment CLI passes target_mode and EMA settings through training, resume, rollout and summaries while target_mode='code' remains the default."
+    - "A preflight proves both arms use the same dataset hash, task, seeds, points, model, optimizer schedule, batch size, epoch/update budget and rollout protocol; only target semantics differ."
+    - "Run the matched small-channel CPU comparison for seeds 0, 1 and 2, recording train/validation losses, wall time, per-step time, target/resource metadata and every rollout outcome."
+    - "Report aggregate mean and sample standard deviation for both arms without selecting only the best seed, and disclose failures/variance."
+    - "Publish a compact evidence/fpj035 bundle with commands, config/data hashes and aggregate/per-seed records, excluding datasets and checkpoints."
+    - "Documentation explains what the comparison can and cannot establish; no cloud/full-channel or paper-success claim is made without separate authorization and evidence."
+    - "Run one final exact pytest suite at completion, following the user's single-check instruction, and report skipped tests separately."
   required_commands:
     - >-
       wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python
       -m pytest -q
 
 known_gaps:
-  - "The current loss uses target_mode='code'; EmaModel state is stored but is not yet a separate target policy used to compute v_r."
-  - "A second full policy copy may materially increase memory; FPJ-034 must measure a small CPU configuration before any full-channel proposal."
+  - "FPJ-034 proves detached target mechanics and small-CPU overhead, not whether it improves closed-loop success."
+  - "The current experiment grid does not yet pass target mode/EMA settings through every cell and rollout summary."
   - "Long-process CPU resume is state-correct but not universally bit-exact; FPJ-031's measured 1e-2 tolerance remains unless new evidence narrows it."
-  - "Local WSL CUDA remains unavailable and the Alibaba Cloud DSW instance is stopped; FPJ-034 does not authorize cloud restart or spend."
-  - "FPJ-033 public evidence is gate-approved; FPJ-034 implementation must preserve all tracked and untracked user/project assets."
+  - "Local WSL CUDA remains unavailable and the Alibaba Cloud DSW instance is stopped; FPJ-035 does not authorize cloud restart or spend."
+  - "Published FPJ-032/033/034 evidence and all recorded datasets/checkpoints must remain unchanged."
   - "Evidence-bundle sanitizer/atomicity/schema and experiment --reuse provenance have nonblocking P2 debt from FPJ-033; they are outside FPJ-034 unless separately queued."
 
 prohibited_claims:
-  - "paper-faithful detached EMA target completed before verification, anti-pattern, quality and gate all pass"
+  - "detached target improves success before the matched comparison is complete"
   - "paper success rate or full paper recipe reproduced"
-  - "detached target is equivalent to applying stop_gradient to the online policy"
+  - "small-channel CPU target comparison predicts full-channel A10 behavior"
   - "full-channel target comparison completed"
-  - "cloud CUDA result produced by FPJ-034"
+  - "cloud CUDA result produced by FPJ-035"
   - "bit-exact save/resume in every process history"

@@ -194,11 +194,8 @@ class FlowPolicy(jt.Module):
             )
         if action_slice_mode not in {"code", "exact"}:
             raise ValueError("action_slice_mode must be 'code' or 'exact'")
-        if target_mode != "code":
-            raise NotImplementedError(
-                "top-level target_mode='detached' requires an EMA copy of both the "
-                "observation encoder and velocity model; only code mode is validated"
-            )
+        if target_mode not in {"code", "detached"}:
+            raise ValueError("target_mode must be 'code' or 'detached'")
 
         self.action_shape = action_shape
         self.action_dim = action_dim
@@ -359,6 +356,57 @@ class FlowPolicy(jt.Module):
         """Return all and only parameters safe for Jittor optimizers."""
         return [parameter for parameter in self.parameters() if not parameter.is_stop_grad()]
 
+    def _target_constructor_kwargs(self) -> Dict[str, Any]:
+        """Reconstruct this policy's architecture for an independent target copy."""
+        config = self._assert_runtime_configuration()
+        compact_shape = config.pop("shape_meta")
+        config.pop("time_scale")
+        config["shape_meta"] = {
+            "action": {"shape": compact_shape["action"]},
+            "obs": {
+                "point_cloud": {"shape": compact_shape["point_cloud"]},
+                "agent_pos": {"shape": compact_shape["agent_pos"]},
+            },
+        }
+        # The target never computes its own training loss.  Keeping its loss in code
+        # mode prevents accidentally nesting another target requirement.
+        config["target_mode"] = "code"
+        return config
+
+    def make_target_policy(self) -> "FlowPolicy":
+        """Return a separate, exact and fully frozen copy for detached EMA use."""
+        self._require_normalizer()
+        target = FlowPolicy(**self._target_constructor_kwargs())
+        target.load_policy_state_dict(self.state_dict(to="numpy"))
+        for parameter in target.parameters():
+            parameter.stop_grad()
+        target.eval()
+        if any(not parameter.is_stop_grad() for parameter in target.parameters()):
+            raise RuntimeError("failed to freeze every detached target parameter")
+        return target
+
+    def _validate_target_policy(self, target_policy: "FlowPolicy") -> None:
+        if not isinstance(target_policy, FlowPolicy):
+            raise TypeError("target_policy must be a FlowPolicy")
+        if target_policy is self:
+            raise ValueError("target_policy must be separate from the online policy")
+        online = self.checkpoint_config
+        target = target_policy.checkpoint_config
+        online.pop("target_mode", None)
+        target.pop("target_mode", None)
+        if online != target:
+            differing = sorted(
+                key
+                for key in set(online) | set(target)
+                if online.get(key) != target.get(key)
+            )
+            raise ValueError(
+                "target_policy architecture does not match the online policy: "
+                + ", ".join(differing)
+            )
+        if any(not parameter.is_stop_grad() for parameter in target_policy.parameters()):
+            raise ValueError("every target_policy parameter must have stop_grad enabled")
+
     def _require_normalizer(self) -> None:
         required = {"action", "agent_pos", "point_cloud"}
         missing = required - set(self.normalizer.keys())
@@ -468,20 +516,35 @@ class FlowPolicy(jt.Module):
     ):
         if not isinstance(batch, Mapping) or "obs" not in batch or "action" not in batch:
             raise KeyError("batch requires obs and action")
-        if target_policy is not None:
-            raise NotImplementedError(
-                "a top-level target policy is disabled until full encoder+model EMA "
-                "save/load support is implemented"
+        if self.loss_fn.target_mode == "code" and target_policy is not None:
+            raise ValueError("target_mode='code' does not use a target_policy")
+        if self.loss_fn.target_mode == "detached" and target_policy is None:
+            raise ValueError(
+                "target_mode='detached' requires Trainer(..., ema_decay=<value>) "
+                "or an explicit frozen target_policy"
             )
         batch_size, global_cond = self._prepare_observations(batch["obs"])
         normalized_actions = self._prepare_actions(batch["action"], batch_size)
+        target_global_cond = None
+        target_model = None
+        if target_policy is not None:
+            self._validate_target_policy(target_policy)
+            with jt.no_grad():
+                target_batch_size, target_global_cond = target_policy._prepare_observations(
+                    batch["obs"]
+                )
+                target_global_cond = target_global_cond.detach().stop_grad()
+            if target_batch_size != batch_size:
+                raise RuntimeError("target_policy observation batch size changed")
+            target_model = target_policy.model
         loss, parts = self.loss_fn(
             self.model,
             normalized_actions,
             global_cond=global_cond,
+            target_global_cond=target_global_cond,
             noise=noise,
             t=t,
-            target_model=None,
+            target_model=target_model,
         )
         logs = {"bc_loss": loss, **parts}
         return loss, logs

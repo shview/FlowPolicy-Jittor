@@ -312,8 +312,8 @@ def test_unvalidated_policy_modes_are_rejected():
         FlowPolicy(**kwargs, obs_as_global_cond=False)
     with pytest.raises(ValueError, match="action_slice_mode"):
         FlowPolicy(**kwargs, action_slice_mode="silent-fix")
-    with pytest.raises(NotImplementedError, match="EMA copy"):
-        FlowPolicy(**kwargs, target_mode="detached")
+    with pytest.raises(ValueError, match="target_mode"):
+        FlowPolicy(**kwargs, target_mode="implicit-ema")
 
 
 def test_two_dimensional_action_shape_is_rejected():
@@ -332,10 +332,41 @@ def test_predict_action_result_is_stop_gradient():
     assert result["action_pred"].is_stop_grad()
 
 
-def test_top_level_target_policy_is_rejected_until_full_ema_exists():
+def test_detached_policy_requires_and_uses_a_separate_frozen_target():
+    policy, batch = _ready_policy(target_mode="detached")
+    with pytest.raises(ValueError, match="requires Trainer"):
+        policy.compute_loss(batch)
+
+    target = policy.make_target_policy()
+    assert target is not policy
+    assert target.obs_encoder is not policy.obs_encoder
+    assert target.model is not policy.model
+    assert target.trainable_parameters() == []
+    loss, logs = policy.compute_loss(
+        batch,
+        target_policy=target,
+        noise=jt.zeros((2, 4, 4), dtype="float32"),
+        t=jt.array([0.2, 0.7], dtype="float32"),
+    )
+    assert np.isfinite(float(loss.item()))
+    assert np.isfinite(float(logs["velocity_loss"].item()))
+    assert all(parameter.is_stop_grad() for parameter in target.parameters())
+
+
+def test_code_mode_stays_default_and_rejects_an_unused_target():
     policy, batch = _ready_policy()
-    target, _ = _ready_policy()
-    with pytest.raises(NotImplementedError, match=r"encoder\+model EMA"):
+    assert policy.loss_fn.target_mode == "code"
+    target = policy.make_target_policy()
+    with pytest.raises(ValueError, match="does not use"):
+        policy.compute_loss(batch, target_policy=target)
+
+
+def test_detached_target_architecture_mismatch_is_actionable():
+    policy, batch = _ready_policy(target_mode="detached")
+    target, _ = _ready_policy(down_dims=(8, 24, 32))
+    for parameter in target.parameters():
+        parameter.stop_grad()
+    with pytest.raises(ValueError, match="architecture.*down_dims"):
         policy.compute_loss(batch, target_policy=target)
 
 

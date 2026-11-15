@@ -1,6 +1,6 @@
 """Training utilities for the Jittor FlowPolicy port."""
 
-from .ema import EmaModel
+from .ema import DetachedEmaTarget, EmaModel
 from .trainer import (
     TRAINER_KIND,
     TRAINER_SCHEMA_VERSION,
@@ -10,6 +10,7 @@ from .trainer import (
 
 __all__ = [
     "EmaModel",
+    "DetachedEmaTarget",
     "TRAINER_KIND",
     "TRAINER_SCHEMA_VERSION",
     "Trainer",

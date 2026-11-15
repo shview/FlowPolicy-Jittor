@@ -1,9 +1,10 @@
-"""Exponential moving average of the policy weights (paper-faithful EMA target, FPJ-028).
+"""EMA utilities for stored shadows and a live detached target policy.
 
 The released code trains a single network and uses it for both the target velocity and
 the online prediction; the paper describes an EMA target instead (see D005).  This
-module is that missing piece: a separate shadow copy of the **encoder and the U-Net**
-that follows the online weights with a decayed average.
+``EmaModel`` is the released-code experiment's stored shadow: it can be copied into
+an online policy for evaluation but is not used by the loss. ``DetachedEmaTarget``
+instead owns a separate frozen policy that the detached loss evaluates directly.
 
 Design notes:
 
@@ -23,6 +24,7 @@ import math
 from typing import Any, Dict, Mapping, Optional, Tuple
 
 import numpy as np
+import jittor as jt
 
 # Matched against every dotted path segment, so `normalizer.*`, `model.var_est.*` and
 # any future nesting are all excluded without hard-coding full names.
@@ -46,6 +48,8 @@ def _float_array(value: Any) -> np.ndarray:
     array = np.asarray(value)
     if not np.issubdtype(array.dtype, np.floating):
         raise TypeError(f"EMA can only average floating point tensors, got {array.dtype}")
+    if not np.all(np.isfinite(array)):
+        raise ValueError("EMA tensors must contain only finite values")
     return array.astype(np.float32, copy=True)
 
 
@@ -185,9 +189,167 @@ class EmaModel:
                     f"expected {self._shadows[name].shape}"
                 )
             shadows[name] = array
-        self._shadows = shadows
-        self.decay = _finite_decay(state["decay"])
-        self.warmup_steps = int(state["warmup_steps"])
-        self.optimization_step = int(state["optimization_step"])
-        if self.optimization_step < 0:
+        decay = _finite_decay(state["decay"])
+        warmup_steps = state["warmup_steps"]
+        if isinstance(warmup_steps, bool) or not isinstance(
+            warmup_steps, (int, np.integer)
+        ) or int(warmup_steps) < 0:
+            raise ValueError("EMA warmup_steps must be a non-negative integer")
+        optimization_step = state["optimization_step"]
+        if isinstance(optimization_step, bool) or not isinstance(
+            optimization_step, (int, np.integer)
+        ) or int(optimization_step) < 0:
             raise ValueError("EMA optimization_step must be >= 0")
+        # Commit only after every tensor and scalar has passed validation.
+        self._shadows = shadows
+        self.decay = decay
+        self.warmup_steps = int(warmup_steps)
+        self.optimization_step = int(optimization_step)
+
+
+class DetachedEmaTarget:
+    """Live, frozen target policy updated only after each online optimizer step.
+
+    The target starts as an exact copy of the online policy.  A training step reads
+    the pre-update target for ``v_r``, updates the online policy, and then calls
+    :meth:`update`; therefore the target cannot be changed by the online optimizer.
+    """
+
+    KIND = "flowpolicy-jittor.detached-ema-target"
+
+    def __init__(
+        self,
+        policy: Any,
+        *,
+        decay: float = 0.999,
+        warmup_steps: int = 0,
+    ) -> None:
+        if not hasattr(policy, "make_target_policy"):
+            raise TypeError("policy must expose make_target_policy")
+        self.decay = _finite_decay(decay)
+        if isinstance(warmup_steps, bool) or not isinstance(
+            warmup_steps, (int, np.integer)
+        ):
+            raise TypeError("warmup_steps must be an integer")
+        if int(warmup_steps) < 0:
+            raise ValueError("warmup_steps must be >= 0")
+        self.warmup_steps = int(warmup_steps)
+        self.optimization_step = 0
+        self.target_policy = policy.make_target_policy()
+        self._names = self._parameter_names(policy, self.target_policy)
+
+    @staticmethod
+    def _averaged_parameters(policy: Any) -> Dict[str, Any]:
+        return {
+            name: parameter
+            for name, parameter in policy.named_parameters()
+            if not _excluded(name)
+        }
+
+    @classmethod
+    def _parameter_names(cls, online: Any, target: Any) -> Tuple[str, ...]:
+        online_parameters = cls._averaged_parameters(online)
+        target_parameters = cls._averaged_parameters(target)
+        if set(online_parameters) != set(target_parameters):
+            raise ValueError(
+                "detached target parameter names do not match the online policy: "
+                f"missing={sorted(set(online_parameters) - set(target_parameters))}, "
+                f"unexpected={sorted(set(target_parameters) - set(online_parameters))}"
+            )
+        if not online_parameters:
+            raise ValueError("policy exposes no weights for the detached EMA target")
+        for name in online_parameters:
+            if tuple(online_parameters[name].shape) != tuple(target_parameters[name].shape):
+                raise ValueError(f"detached target parameter {name!r} has a different shape")
+        return tuple(sorted(online_parameters))
+
+    def effective_decay(self) -> float:
+        step = self.optimization_step
+        ramp = float(min(self.decay, (1.0 + step) / (10.0 + step)))
+        if self.warmup_steps <= 0:
+            return ramp
+        progress = min(1.0, step / float(self.warmup_steps))
+        return float(ramp + (self.decay - ramp) * progress)
+
+    def update(self, policy: Any) -> float:
+        """EMA-update the frozen target from the current online weights."""
+        names = self._parameter_names(policy, self.target_policy)
+        if names != self._names:
+            raise ValueError("policy parameters changed since target initialization")
+        online = self._averaged_parameters(policy)
+        target = self._averaged_parameters(self.target_policy)
+        decay = self.effective_decay()
+        with jt.no_grad():
+            for name in self._names:
+                value = target[name] * decay + online[name].detach() * (1.0 - decay)
+                target[name].update(value.detach())
+        self.optimization_step += 1
+        if any(
+            not parameter.is_stop_grad()
+            for parameter in self.target_policy.parameters()
+        ):
+            raise RuntimeError("detached target unexpectedly acquired trainable parameters")
+        return decay
+
+    def state_dict(self) -> Dict[str, Any]:
+        return {
+            "kind": self.KIND,
+            "decay": self.decay,
+            "warmup_steps": self.warmup_steps,
+            "optimization_step": self.optimization_step,
+            "names": list(self._names),
+            "target_policy": {
+                name: np.asarray(value).copy()
+                for name, value in self.target_policy.state_dict(to="numpy").items()
+            },
+        }
+
+    def load_state_dict(self, state: Mapping[str, Any]) -> None:
+        required = {
+            "kind",
+            "decay",
+            "warmup_steps",
+            "optimization_step",
+            "names",
+            "target_policy",
+        }
+        if not isinstance(state, Mapping):
+            raise TypeError("detached EMA target state must be a mapping")
+        if set(state) != required:
+            raise KeyError(
+                "detached EMA target state keys mismatch: "
+                f"missing={sorted(required - set(state))}, "
+                f"unexpected={sorted(set(state) - required)}"
+            )
+        if state["kind"] != self.KIND:
+            raise ValueError(
+                "EMA state kind does not describe a detached target: "
+                f"{state['kind']!r}"
+            )
+        names = tuple(state["names"])
+        if names != self._names:
+            raise ValueError(
+                "detached EMA target names do not match this policy: "
+                f"stored={len(names)} current={len(self._names)}"
+            )
+        decay = _finite_decay(state["decay"])
+        warmup_steps = state["warmup_steps"]
+        if isinstance(warmup_steps, bool) or not isinstance(
+            warmup_steps, (int, np.integer)
+        ) or int(warmup_steps) < 0:
+            raise ValueError("detached EMA warmup_steps must be a non-negative integer")
+        optimization_step = state["optimization_step"]
+        if isinstance(optimization_step, bool) or not isinstance(
+            optimization_step, (int, np.integer)
+        ) or int(optimization_step) < 0:
+            raise ValueError(
+                "detached EMA optimization_step must be a non-negative integer"
+            )
+        # The target policy loader is itself atomic.  Validate every scalar before it
+        # so malformed metadata cannot leave a valid-but-uncommitted target state.
+        self.target_policy.load_policy_state_dict(state["target_policy"])
+        for parameter in self.target_policy.parameters():
+            parameter.stop_grad()
+        self.decay = decay
+        self.warmup_steps = int(warmup_steps)
+        self.optimization_step = int(optimization_step)

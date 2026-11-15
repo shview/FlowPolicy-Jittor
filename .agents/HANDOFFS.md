@@ -153,6 +153,125 @@
   - policy checkpoint 仍不等于完整 trainer checkpoint。
 - Recommended next role: verification
 
+
+## FPJ034-AP-01
+
+- Task: FPJ-034, anti_pattern, attempt 1
+- Decision: FAIL / return to implementation. Product files remained read-only; no cloud resource
+  was started and no commit/push was performed.
+- Confirmed positive properties:
+  - detached target is a separate encoder + U-Net policy, all target parameters are stopped, and
+    trainer passes that live target into the detached loss before updating online weights;
+  - `Trainer.train_step` orders target read -> online optimizer step -> EMA update
+    (`trainer.py:235-251`), and the direct EMA formula is
+    `d*target + (1-d)*online.detach()` (`ema.py:262-274`);
+  - code mode remains the default; target-mode, controller-kind and schema-1 mismatches are
+    rejected; no fake `stop_gradient`-on-online shortcut was found;
+  - forbidden `data/**`, `evidence/fpj033/**` and upstream paths have no FPJ-034 changes.
+- P1 blocker — optimizer checkpoint is not fully validated/restored:
+  - `optimizer_state()` records `eps`, `betas` and `weight_decay`
+    (`trainer.py:292-300`), but `load_optimizer_state()` ignores all three and retains the fresh
+    trainer's values (`trainer.py:302-344`). A detached checkpoint saved with
+    `eps=1e-8, betas=(0.9,0.999), weight_decay=1e-6` loaded successfully into a trainer created
+    with `eps=0.5, betas=(0.1,0.2), weight_decay=0.9`; both trainer and live optimizer kept the
+    incompatible latter values. This silently changes continuation semantics and violates the
+    acceptance requirement to validate/restore optimizer state.
+  - the same loader validates the shape of `m` but not `values`: replacing
+    `optimizer.values[0]` with shape `(1,)` loaded successfully while its parameter shape was
+    `(64,3)` (`trainer.py:328-343`). Non-finite/dtype validation is also absent. Tests cover a bad
+    `m` shape but not the `values` path (`tests/test_trainer.py:389-400`).
+- P2 — rejected checkpoint loads are non-transactional:
+  - online policy and optimizer are committed before target state validation
+    (`trainer.py:493-506`); a checkpoint with only detached EMA `kind` corrupted was correctly
+    rejected, but 176 online tensors and optimizer `n_step=1` had already replaced the fresh
+    trainer while `global_step` remained 0. The current wrong-kind test checks only the exception
+    (`tests/test_ema.py:319-333`).
+  - within `DetachedEmaTarget.load_state_dict`, target weights are loaded before decay/warmup/
+    counter validation (`ema.py:323-340`), so a late scalar error can likewise leave a partial
+    target restore. Validate all payloads first or roll back the entire trainer on failure.
+- P2 — CLI provenance can misreport resumed EMA settings:
+  - model `config_sha256` includes `target_mode` but omits `ema_decay` and
+    `ema_warmup_steps` (`train_smoke.py:489-505`);
+  - checkpoint load restores the saved target decay/warmup, but summary fields are written from
+    the new CLI arguments rather than `trainer.ema` (`train_smoke.py:559-569`). Resuming a 0.9
+    target with `--ema-decay 0.5` therefore trains with restored 0.9 while reporting 0.5. Either
+    reject differing EMA settings or report/hash the effective restored values.
+- P3:
+  - code mode without EMA reports role `stored_shadow_not_used_by_loss` even though
+    `ema.enabled=false` (`train_smoke.py:559-565`); use a `none` role for clarity.
+  - coordination anomaly: `FPJ034-VERIFY-01` was inserted near line 157 instead of appended at
+    the physical end of the append-only handoff log. This review did not rewrite history and
+    appended this record at the physical end as instructed.
+- Exact anti-pattern commands/results:
+  - state validation on claim -> exit 0, `task=FPJ-034 stage=anti_pattern status=in_progress`;
+  - optimizer hyperparameter counterexample -> load succeeded; stored
+    `1e-8/[0.9,0.999]/1e-6`, live after load `0.5/(0.1,0.2)/0.9`;
+  - malformed AdamW variance counterexample -> load succeeded with parameter `(64,3)` and
+    `values[0] (1,)`;
+  - corrupted detached-kind counterexample -> raised the expected `ValueError`, but reported
+    `rejected_load_mutated_online_tensors=176`, `global_step=0`, `optimizer_n_step=1`;
+  - all temporary counterexample checkpoints were under `/tmp` and removed by the script.
+- Required fixes before repeating verification:
+  1. validate or restore every optimizer hyperparameter and validate both moment arrays' shape,
+     dtype and finite values before mutation;
+  2. make failed trainer/target loads atomic (prevalidation or complete rollback) and add tests;
+  3. bind CLI summary/config hash to effective EMA decay/warmup and cover resume mismatch;
+  4. preserve all earlier detached-target isolation/update/resource tests and claim boundaries.
+- Prohibited claims remain: no paper-faithful reproduction, detached success-rate comparison,
+  full-channel target run, cloud/CUDA result, speedup or universal bit-exact resume.
+- Recommended next role: implementation (attempt 2)
+
+
+## FPJ034-VERIFY-01
+
+- Task: FPJ-034, verification, attempt 1
+- Decision: PASS. No verification blocker found; product code remained read-only.
+- Coordination changes only:
+  - `.agents/STATE.yaml`
+  - `.agents/HANDOFFS.md` (this append-only record)
+- Exact required baseline rerun:
+  - command: `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q`
+  - exit code: 0
+  - result: `234 passed, 1 skipped, 40 warnings in 239.38s (0:03:59)`
+  - skipped separately: `tests/test_conv1d_parity.py:12`, because the core Jittor environment
+    has no `torch`; it is not counted among the 234 passes.
+  - this is +7 passed versus the gate-approved FPJ-033 baseline (`227 passed, 1 skipped`), matching
+    the new detached-target/CLI/checkpoint coverage rather than silently replacing the old baseline.
+- Independent detached-target check (fresh process, not a pytest test body):
+  - constructed a detached trainer and asserted separate policy/encoder/U-Net object identities,
+    disjoint parameter identities and zero target trainable parameters;
+  - computed the loss, executed only the online AdamW step, synchronized Jittor and confirmed all
+    194 target state tensors were bit-identical to their pre-optimizer values;
+  - then executed only the EMA update: effective decay was 0.1, 168 averaged tensors moved, and
+    the maximum error against `d*old_target + (1-d)*online` was `1.1920928955078125e-07`;
+  - a separate two-step run saved/loaded a schema-2 trainer checkpoint and restored all 194 target
+    tensors exactly with `global_step=2` and `ema.optimization_step=2`;
+  - command exit code: 0.
+- Resource/evidence verification:
+  - reran `scripts/detached_target_probe.py --out /tmp/fpj034-verification-probe.json` in fresh
+    subprocesses; exit code 0. The rerun again had zero target trainable parameters, eight EMA
+    updates, detached construction RSS +3.5625 MiB over code/no-EMA and median-step ratio 0.9689;
+    variation from the tracked +3.75 MiB / 0.9133 ratio confirms the documented short-run noise.
+  - independently parsed `evidence/fpj034/resource_probe.json`: batch 2, 8 points, three JIT
+    warm-up steps, five measured steps, zero target trainable parameters, eight EMA steps; the
+    recorded +3.75 MiB construction delta recomputes exactly from 9.5625 - 5.8125.
+- Additional checks:
+  - strict CPU environment command -> exit 0, `strict_check.passed=true`, Jittor reports
+    `has_cuda=false`;
+  - source scan confirms `target_mode="code"` remains the default, detached controller and trainer
+    schema 2 exist, trainer passes the live target, and train/rollout CLIs both expose target mode;
+  - forbidden tracked/untracked changes under `data/**` and `evidence/fpj033/**`: none;
+  - `git diff --check`: exit 0 (line-ending warnings only).
+- Remaining boundaries:
+  - the resource result is a small/noisy CPU probe and does not establish a speedup or predict
+    full-channel GPU memory;
+  - policy-only checkpoints remain inference artifacts; exact detached training resume requires
+    the trainer checkpoint;
+  - schema-1 trainer checkpoints are rejected clearly rather than migrated;
+  - no cloud/CUDA run, full-channel target comparison or success-rate comparison was performed;
+    do not claim paper-faithful reproduction or universal bit-exact resume.
+- Recommended next role: anti_pattern
+
 - Next agent should read:
   - `src/flowpolicy_jittor/model/policy.py`（`_runtime_checkpoint_config`、`_assert_runtime_configuration`、`save_checkpoint`）
   - `tests/test_policy.py`（`test_unet_condition_flag_mutation_blocks_save`）
@@ -2763,5 +2882,403 @@
   - FPJ-034 activated at `implementation/ready` with fresh role handoffs, detached-target scope,
     checkpoint/resume/gradient-isolation/resource acceptance and no cloud-spend authority.
 - Recommended next role: FPJ-034 implementation
+
+
+## FPJ034-IMPL-01
+
+- Task: FPJ-034, implementation, attempt 1
+- Result: implementation complete; handed to verification without committing or pushing.
+- Product changes:
+  - `FlowPolicy(target_mode="detached")` now creates an explicit target only through
+    `make_target_policy()`: a distinct encoder + U-Net copy with every parameter stopped;
+    code mode remains the constructor default and rejects an unused target.
+  - detached loss computes the target observation condition and `v_r` under `jt.no_grad()`;
+    the online `v_t` path remains trainable. Target architecture/freeze mismatches fail with
+    actionable errors.
+  - `DetachedEmaTarget` owns the live target policy and updates it directly after the online
+    optimizer step. `EmaModel` remains the stored-but-unused code-mode shadow.
+  - trainer schema 2 records `target_mode`, online policy, optimizer/schedule, target state and
+    update counters. Schema 1 is explicitly rejected as lacking target semantics; code/detached
+    and stored/detached mismatches are rejected.
+  - `train_smoke.py` accepts `--target-mode`; detached requires `--ema-decay`, validation uses the
+    live target, and summaries distinguish target roles. `rollout.py --target-mode` loads the
+    corresponding strict policy checkpoint.
+  - docs add D021 and distinguish released-code target, stored EMA and detached loss target.
+- Tests added/changed:
+  - separate encoder/model identity, all-target stop-grad, finite detached loss, architecture
+    mismatch and unchanged/default code behavior;
+  - target unchanged by the online optimizer, numerical EMA formula, update ordering and counter;
+  - detached checkpoint round-trip/continuation, target-kind mismatch, mode mismatch and clear
+    schema-1 rejection;
+  - end-to-end detached `train_smoke` CLI, summary/checkpoint role and rollout-policy reload.
+- Resource evidence:
+  - `scripts/detached_target_probe.py` runs three modes in fresh CPU processes, performs three JIT
+    warm-up steps and measures five steps;
+  - tracked record: `evidence/fpj034/resource_probe.json`;
+  - configuration: batch 2, 8 points, horizon 4, channels 8/16/32, 102676 online trainable
+    parameters, seed 34, OMP threads 1;
+  - detached target had zero trainable parameters and eight EMA updates; construction RSS delta
+    was 9.5625 MiB versus 5.8125 MiB for code/no-EMA (+3.75 MiB). Median measured step was
+    53.9 ms versus 59.0 ms. This short/noisy result shows no measured slowdown but does not support
+    a speedup or full-channel extrapolation.
+- Exact verification performed by implementation:
+  - focused policy/EMA/trainer/flow tests -> `83 passed in 81.90s`;
+  - policy/EMA/trainer/train CLI/rollout regression after rollout support ->
+    `11 passed, 8 warnings in 18.08s` for targeted detached + rollout cases;
+  - exact required full command -> exit 0,
+    `234 passed, 1 skipped, 40 warnings in 190.76s (0:03:10)`;
+  - skipped separately: `tests/test_conv1d_parity.py:12`, because torch is absent from the core
+    Jittor environment; it is not counted among the 234 passes;
+  - strict CPU environment check -> exit 0, `strict_check.passed=true`, Jittor 1.3.11.0 CPU;
+  - `py_compile`, CLI help checks and `git diff --check` -> exit 0 (line-ending warnings only);
+  - state validator on implementation claim -> exit 0.
+- Files changed:
+  - `src/flowpolicy_jittor/model/{flow_matching.py,policy.py}`
+  - `src/flowpolicy_jittor/training/{__init__.py,ema.py,trainer.py}`
+  - `scripts/{train_smoke.py,rollout.py,detached_target_probe.py}`
+  - `tests/{test_policy.py,test_ema.py,test_trainer.py,test_train_smoke_resume.py}`
+  - `README.md`, `docs/{DECISIONS.md,DEFENSE_GUIDE.md,REPRODUCTION_PLAN.md}`
+  - `evidence/fpj034/resource_probe.json`
+- Remaining risks / boundaries:
+  - policy checkpoints contain only online inference weights; exact training resume requires the
+    schema-2 trainer checkpoint that also holds target and optimizer state;
+  - schema-1 trainer checkpoints are clearly rejected rather than migrated;
+  - the resource probe is a small CPU measurement with visible timing noise, not a full-channel
+    memory estimate or formal target comparison;
+  - no cloud instance was started, no CUDA result was produced, and no dataset/checkpoint or
+    FPJ-033 evidence was modified;
+  - do not claim paper-faithful reproduction, a detached-target success-rate result, a
+    full-channel comparison, universal bit-exact resume or a target speedup.
+- Recommended next role: verification
+
+
+## FPJ034-AP-02
+
+- Task: FPJ-034, anti_pattern, attempt 1; physical-end append correction.
+- Decision: FAIL / `implementation needs_fix`, attempt 2.
+- The detailed findings, counterexample outputs, paths and line references are recorded in
+  `FPJ034-AP-01`. Because an ambiguous patch anchor inserted that record near the beginning of
+  the historical log rather than at its physical end, this correction is appended here without
+  deleting or rewriting any prior record. The earlier verification record has the same chronology
+  anomaly; implementation should locate both records by ID.
+- P1 blocker to fix: trainer checkpoints record but neither validate nor restore AdamW
+  `eps`/`betas`/`weight_decay`, and accept an optimizer `values` tensor with the wrong shape.
+- P2 fixes: rejected target checkpoints currently leave online policy/optimizer partially
+  mutated; CLI resume can train with restored EMA settings while reporting/hash-labeling the new
+  CLI values.
+- Counterexample summary: incompatible optimizer hyperparameters loaded silently; parameter
+  `(64,3)` accepted `values[0] (1,)`; wrong target kind raised but left 176 online tensors changed,
+  optimizer `n_step=1` and global step 0.
+- Product code remained read-only; no forbidden path, cloud, commit or push action occurred.
+- Recommended next role: implementation (attempt 2); read `FPJ034-AP-01` in full.
+
+
+## FPJ034-IMPL-02
+
+- Task: FPJ-034, implementation, attempt 2
+- Result: all `FPJ034-AP-01` required fixes implemented; handed back to verification.
+- P1 fixes:
+  - AdamW checkpoint restore now validates both `m` and `values` tensors for count, exact shape,
+    floating dtype and finite values before any optimizer mutation;
+  - saved `eps`, `betas` and `weight_decay` are validated and restored into both `Trainer` and
+    the live Jittor optimizer. Direct live-optimizer hyperparameter mutation is detected before
+    saving/snapshotting.
+- Atomicity fixes:
+  - trainer load snapshots online policy, optimizer, target/EMA, counters, history and current LR;
+    any policy/optimizer/target/history failure restores the entire pre-load state;
+  - detached target validates decay, warmup and update counter before atomically loading target
+    tensors, so late invalid metadata cannot partially replace target weights.
+- CLI provenance fixes:
+  - resumed EMA decay/warmup must equal the checkpoint or the CLI exits with both requested and
+    stored values;
+  - config hashes and summaries use effective EMA values; no-EMA role is `none`; an EMA warmup
+    without EMA decay is rejected.
+- Regression coverage:
+  - restoring into deliberately different AdamW hyperparameters yields the saved values in both
+    trainer and optimizer;
+  - malformed `m` and `values` shapes, integer dtype and NaN values are rejected;
+  - rejected optimizer and detached-kind checkpoints leave online weights, target weights,
+    moments, counters and history unchanged;
+  - invalid detached metadata is rejected before target mutation;
+  - CLI summary/hash provenance and resumed EMA mismatch are covered end to end.
+- Exact commands/results:
+  - initial fix suite `tests/test_trainer.py tests/test_ema.py tests/test_train_smoke_resume.py`
+    -> `41 passed, 16 warnings in 147.48s`;
+  - nine direct AP-counterexample and CLI cases -> `9 passed, 8 warnings in 22.82s`;
+  - final exact required full command -> exit 0,
+    `241 passed, 1 skipped, 40 warnings in 330.70s (0:05:30)`;
+  - skipped separately: `tests/test_conv1d_parity.py:12`, core Jittor environment has no torch;
+    it is not counted among the 241 passes;
+  - `py_compile`, `git diff --check` and state validation -> exit 0 (line-ending warnings only).
+- Docs updated: README and D021 now state that optimizer tensors/hyperparameters are restored,
+  failed loads roll back atomically, and summaries record effective EMA provenance.
+- Remaining boundaries unchanged:
+  - policy-only checkpoint is for inference; trainer checkpoint is required for detached resume;
+  - schema 1 remains clearly rejected rather than migrated;
+  - small CPU resource timing is noisy and not a speedup/full-channel claim;
+  - no cloud/CUDA run, formal target comparison or success-rate experiment occurred.
+- Repository safety: no dataset, `evidence/fpj033`, upstream, checkpoint or cloud resource was
+  changed; no commit or push was performed.
+- Recommended next role: verification (attempt 2)
+
+
+## FPJ034-VERIFY-02
+
+- Task: FPJ-034, verification, attempt 2
+- Decision: PASS. All attempt-1 anti-pattern blockers are independently closed; product files
+  remained read-only and no cloud resource, commit or push was used.
+- Coordination files changed only:
+  - `.agents/STATE.yaml`
+  - `.agents/HANDOFFS.md` (this record appended at the physical end)
+- Exact required baseline rerun:
+  - command: `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q`
+  - exit code: 0
+  - result: `241 passed, 1 skipped, 40 warnings in 318.17s (0:05:18)`
+  - skipped separately: `tests/test_conv1d_parity.py:12`, because torch is absent from the core
+    Jittor environment; it is not counted among the 241 passes;
+  - this is +14 passed versus the gate-approved FPJ-033 baseline (`227 passed, 1 skipped`).
+- Independent counterexample script (outside the repository, deleted after use), exit 0:
+  - a checkpoint saved with AdamW `eps=1e-7`, `betas=(0.8,0.95)`, `weight_decay=2e-4`
+    restored those values into both a deliberately incompatible Trainer and its live optimizer;
+  - wrong-shape `m[0]` and `values[0]` were rejected and online policy, target policy, both moment
+    lists, optimizer hyperparameters/counter, global/EMA steps and history remained unchanged;
+  - NaN and integer `values[0]` were rejected with the same unchanged-state assertion;
+  - wrong detached target `kind` and a target payload with modified weights plus
+    `optimization_step=-1` were rejected before leaving any partial target/trainer state;
+  - detached CLI resume with requested decay 0.5 versus stored 0.9 was rejected; correct 0.9/2
+    resume completed, and summary `ema` matched config while `config_sha256` recomputed exactly;
+  - final output: `FPJ034 verification2 independent checks: PASS`.
+- Resource/evidence verification:
+  - reran `scripts/detached_target_probe.py --out /tmp/fpj034-v2-probe.json`, exit 0, then deleted
+    the temporary report;
+  - rerun again had zero target trainable parameters, eight target updates, detached construction
+    RSS +3.5625 MiB over code/no-EMA and median-step ratio 0.9616;
+  - tracked evidence independently parses as zero target trainable parameters, eight updates,
+    +3.75 MiB and median ratio 0.9133, consistent with the documented noisy small-CPU result.
+- Additional commands/results:
+  - strict environment command -> exit 0, `strict_check.passed=true`, Jittor 1.3.11.0 CPU,
+    `has_cuda=false`;
+  - `git status/diff` for `data/**` and `evidence/fpj033/**` -> no output;
+  - `git -C ../flowpolicy-upstream status --short` -> no output;
+  - `git diff --check` -> exit 0 (line-ending warnings only);
+  - state validation on claim and handoff -> exit 0.
+- Remaining boundaries:
+  - the resource probe is short/noisy CPU evidence and does not establish speedup or predict
+    full-channel GPU memory;
+  - policy-only checkpoints remain inference artifacts; detached resume needs trainer schema 2;
+  - schema 1 is rejected clearly rather than migrated;
+  - no formal target success-rate comparison, cloud/CUDA run, paper recipe or universal bit-exact
+    resume is established.
+- Recommended next role: anti_pattern (attempt 2)
+
+
+## FPJ034-AP-03
+
+- Task: FPJ-034, anti_pattern, attempt 2
+- Decision: FAIL / return to implementation for attempt 3. Product code remained read-only; no
+  cloud resource, commit or push was used.
+- Confirmed positive properties:
+  - the attempt-1 AdamW fixes reject wrong-shape, integer and non-finite moment tensors, restore
+    optimizer hyperparameters, detect direct live-optimizer hyperparameter mutation, and roll back
+    the tested rejected trainer loads atomically;
+  - detached target/online parameters are disjoint, target parameters remain stopped, the loss
+    reads the pre-update target, and the implementation then applies the online optimizer before
+    `d * target + (1-d) * online.detach()`;
+  - target kind/name/late-scalar checks, code/detached separation, CLI EMA mismatch handling and
+    summary roles pass the focused regression suite;
+  - the small-CPU resource record remains explicitly noisy and non-extrapolative; forbidden
+    datasets, FPJ-033 evidence and the upstream checkout are clean, and the cloud remains stopped.
+- P1 blocker — checkpoint counters are individually type-checked but not cross-validated:
+  - `Trainer.load_checkpoint()` validates `global_step` at
+    `src/flowpolicy_jittor/training/trainer.py:567-574`, but loads optimizer and EMA counters later
+    at lines 592-595 without requiring either to equal `global_step`;
+  - changing only saved `optimizer.n_step` from 1 to 99 was accepted with
+    `global_step=1, optimizer.n_step=99, ema.optimization_step=1`; the next step used AdamW step
+    100 while the trainer recorded step 2;
+  - changing only detached `ema.optimization_step` from 1 to 99 was also accepted; the next
+    trainer step advanced it to 100, so the EMA schedule no longer corresponds to the online
+    update count. Both payloads are impossible outputs of an unmodified `Trainer` and silently
+    change continuation semantics. Require `optimizer.n_step == global_step` and, whenever EMA is
+    enabled, `ema.optimization_step == global_step` before committing any state.
+- P1 blocker — CLI resume provenance is still not bound to the checkpoint:
+  - resume loads the trainer and checks EMA settings/epoch position/history at
+    `scripts/train_smoke.py:357-385`, but neither the trainer checkpoint nor the paired partial
+    report carries and validates the original dataset fingerprint and full training config;
+  - a one-epoch checkpoint produced from dataset A resumed successfully on a same-schema,
+    same-window-count dataset B whose action/state values were deliberately shifted. The final
+    summary reports only dataset B and its hash (`scripts/train_smoke.py:525-542`), so it hides
+    that the first epoch used A;
+  - changing resume batch size from 8 to 10 also succeeded because floor division kept
+    `steps_per_epoch=2`. `model_config`/`config_sha256` at `scripts/train_smoke.py:504-523` omits
+    `batch_size`, so the hash remained
+    `e4201c004fb84aa7a802da23c2ef2194925aa0f1472bffa5e22f5c47204d54ce` despite changed update
+    semantics. Persist and validate an immutable resume provenance block (at minimum data hash,
+    batch size, epoch/schedule/model/target configuration) rather than relying on current CLI
+    values and output-directory history.
+- P2 — malformed trainer history/log metadata is accepted:
+  - `log_every` is saved (`trainer.py:444-457`) and required in the schema, but load neither
+    validates nor restores it; a checkpoint value 999 loaded into a trainer that kept live value 1;
+  - history is committed as `dict(entry)` only (`trainer.py:595-597`). A single entry with
+    `step=999`, `lr=NaN`, `loss=NaN` loaded successfully alongside `global_step=1`. Validate the
+    bounded contiguous step sequence and finite numeric fields, and define whether `log_every` is
+    restored or must match.
+- P2 — stored-shadow EMA loading remains permissive and non-transactional:
+  - `_float_array()` checks floating dtype but not finiteness
+    (`src/flowpolicy_jittor/training/ema.py:47-51`), so a code-mode trainer checkpoint containing
+    a NaN shadow loaded successfully and retained the NaN;
+  - `EmaModel.load_state_dict()` replaces `_shadows` before validating scalars
+    (`ema.py:181-195`). A payload that changed the first shadow and set
+    `optimization_step=-1` raised but left that shadow changed when the public EMA loader was used
+    directly; `warmup_steps=-7` was accepted outright. The outer trainer rollback masks the first
+    case during trainer load, but the public component loader and non-finite checkpoint path remain
+    unsafe. Validate all tensors/scalars first, then commit once.
+- P3: none.
+- Exact commands/results:
+  - state validator after claim -> exit 0,
+    `Agent state OK: task=FPJ-034 stage=anti_pattern status=in_progress`;
+  - focused regression command covering AdamW validation/direct mutation, detached aliases,
+    gradients, EMA formula/order, target mismatch, CLI resume/hash/role -> exit 0,
+    `18 passed, 16 warnings in 25.90s`;
+  - stdin counterexample for mismatched counters -> exit 0; both `optimizer_counter` and
+    `ema_counter` printed `ACCEPTED` and continued with the divergent counters described above;
+  - malformed history/log and stored-shadow NaN probe -> exit 0; printed
+    `history ACCEPTED ... live_log_every=1` and `stored_nan ACCEPTED nan=True`;
+  - direct stored-shadow late-scalar probe -> exit 0; printed
+    `stored_shadow_mutated_after_reject True` and `negative_warmup ACCEPTED -7`;
+  - cross-dataset CLI resume -> exit 0; both invocations returned 0, final summary reported only
+    dataset B, and resume metadata had no prior data/config hash;
+  - changed-batch CLI resume -> exit 0; reported `batch_size=10`, `steps_per_epoch=2`, accepted the
+    checkpoint and retained the same config hash because `batch_size` is absent from `config`;
+  - repository safety checks -> no forbidden project-path or upstream changes; all temporary
+    counterexamples were created under `/tmp` and no product file was modified.
+- Acceptance status:
+  - PASS: explicit detached policy, default code mode, target gradient isolation and documented
+    optimizer-then-EMA ordering/formula;
+  - FAIL: trainer checkpoint/resume validation is not semantically closed because cross-counter
+    corruption and changed CLI data/batch provenance are accepted;
+  - PARTIAL: normal small-CPU finite/shape tests pass, but malformed history and stored EMA
+    non-finite state bypass validation;
+  - PASS: documented small-CPU resource scope and three-mode terminology remain appropriately
+    bounded; no cloud spend or formal target comparison occurred;
+  - PASS based on `FPJ034-VERIFY-02`: exact full suite was `241 passed, 1 skipped`; skipped remains
+    separate and was not counted as passed.
+- Required fixes before repeating verification:
+  1. reject optimizer/EMA counters inconsistent with trainer `global_step`, atomically and before
+     any policy/optimizer/target commit;
+  2. bind CLI resumes to immutable original data/config provenance, include batch size in the
+     hashed training config, and test changed-dataset and changed-batch rejection;
+  3. validate trainer history/log metadata and make stored-shadow EMA tensor/scalar loading finite,
+     strict and atomic;
+  4. preserve the attempt-2 fixes and all target isolation/resource claim boundaries.
+- Remaining risks / prohibited claims:
+  - no paper-faithful reproduction, detached success-rate comparison, full-channel target run,
+    cloud/CUDA result, target speedup or universal bit-exact resume is established;
+  - current schema-2 resume must not be called provenance-safe until the P1 cases above are fixed.
+- Recommended next role: implementation (attempt 3); read `FPJ034-AP-03` in full.
+
+
+## FPJ034-IMPL-03
+
+- Task: FPJ-034, implementation, attempt 3
+- Result: all `FPJ034-AP-03` P1/P2 findings fixed; handed to verification.
+- Counter/state closure:
+  - checkpoint prevalidation now requires `optimizer.n_step == global_step` and, when EMA exists,
+    `ema.optimization_step == global_step`; mismatches reject before any component commit;
+  - recent history is required to contain the exact bounded/contiguous step suffix (up to 50),
+    finite loss/LR, schedule-matching LR and an EMA decay field exactly when EMA is enabled;
+  - stored `log_every` must match the live trainer.
+- Immutable resume provenance:
+  - `Trainer` schema-2 state now carries deterministic provenance metadata and rejects any field
+    mismatch before restoring weights;
+  - `train_smoke.py` binds provenance to the logical data-tree SHA256, device, epochs, batch size,
+    steps/epoch, total steps, model/preprocessing dimensions, LR schedule, seed, action slicing,
+    target mode and EMA configuration;
+  - the same block is the public summary config and `config_sha256` input. Different same-schema
+    data, batch size or EMA settings now produce an actionable CLI rejection rather than a mixed run.
+- Stored-shadow EMA hardening:
+  - every shadow must be floating and finite;
+  - decay, warmup and counter are validated before committing shadows, so the public component
+    loader is atomic even without the outer trainer rollback.
+- Regression coverage:
+  - optimizer and EMA counter 99 vs global step 1 both reject without state change;
+  - future/NaN history and mismatched log interval reject;
+  - direct stored EMA NaN, negative warmup and late invalid counter reject atomically;
+  - resume on a value-shifted dataset or batch 10 after batch 8 rejects by provenance;
+  - correct resume succeeds and config SHA recomputes exactly from the reported config.
+- Exact commands/results:
+  - seven direct AP-03 regression cases -> `7 passed, 24 zarr warnings` plus two pre-existing
+    Python escape warnings that were then removed;
+  - final exact required full command -> exit 0,
+    `246 passed, 1 skipped, 48 warnings in 193.76s (0:03:13)`;
+  - skipped separately: `tests/test_conv1d_parity.py:12`, core environment has no torch and the
+    skip is not counted among the 246 passes;
+  - `py_compile`, `git diff --check` and state validation -> exit 0 (line-ending warnings only).
+- Docs updated: README/D021 state that resume binds data SHA, batch/full configuration, checks all
+  counters/history and cannot splice two runs while reporting only the latter configuration.
+- Boundaries unchanged: no cloud/CUDA run, formal detached comparison, success-rate claim,
+  full-channel resource estimate, target speedup or universal bit-exact resume; policy-only
+  checkpoints remain inference artifacts and schema 1 remains explicitly rejected.
+- Safety: no dataset, FPJ-033 evidence, upstream checkout, checkpoint, cloud resource, commit or
+  remote branch was modified.
+- Recommended next role: verification (attempt 3)
+
+
+## FPJ034-RECOVERY-01
+
+- Task: FPJ-034, root recovery after user-directed verification stop.
+- Previous owner: `/root/fpj034_verification3`; it was interrupted while repeating checks because
+  the user explicitly requested a single check rather than multiple verification passes.
+- No result from the interrupted role is used. Product files were not modified by that role.
+- The latest completed single full check remains the implementation-attempt-3 run:
+  `246 passed, 1 skipped, 48 warnings in 193.76s`; the skip is the known torch-absent parity test.
+- State is restored to `verification / ready` with no owner so there is no hidden background work.
+- No cloud, commit or push action occurred.
+
+
+## FPJ034-VERIFY-SINGLE-01
+
+- User-directed single-check verification record for FPJ-034 attempt 3.
+- The user explicitly requested one check instead of repeated role passes. No new pytest run was
+  started here; the accepted single full run is `246 passed, 1 skipped, 48 warnings in 193.76s`.
+- The same implementation run followed focused tests for the attempt-3 counter/provenance fixes.
+- The skipped torch parity test remains separate and is not counted as passed.
+
+
+## FPJ034-AP-SINGLE-01
+
+- User-directed anti-pattern closure for FPJ-034 attempt 3.
+- No third anti-pattern rerun was performed. The concrete attempt-2 findings in `FPJ034-AP-03`
+  were converted into regression tests: mismatched optimizer/EMA counters, cross-dataset resume,
+  changed batch size, malformed history/log metadata and unsafe stored-shadow EMA loading.
+- These cases passed in the single final suite. No claim is made that unlimited adversarial review
+  was performed.
+
+
+## FPJ034-QUAL-SINGLE-01
+
+- User-directed quality closure for FPJ-034 attempt 3.
+- No separate repeated quality pass was run. The gate must rely on the single exact suite, focused
+  regression evidence, documented resource probe and existing claim boundaries.
+- Remaining limitations stay explicit: small/noisy CPU probe, no formal target comparison, no
+  cloud/CUDA result, schema-1 rejection and no universal bit-exact-resume claim.
+
+
+## FPJ034-GATE-01
+
+- Task: FPJ-034, gate, attempt 3
+- Decision: PASS under the user's explicit single-check instruction.
+- Accepted evidence: one exact full run, `246 passed, 1 skipped, 48 warnings in 193.76s`; focused
+  regressions cover target separation, gradient isolation, EMA update/order, atomic checkpoint
+  restore, AdamW tensors/hyperparameters, counter/history consistency and immutable CLI provenance.
+- Resource evidence: `evidence/fpj034/resource_probe.json` records the small CPU configuration,
+  zero target trainable parameters, eight EMA updates, +3.75 MiB construction RSS versus code
+  without EMA and noisy timing that is not interpreted as a speedup.
+- All seven acceptance items pass. No cloud instance, CUDA/full-channel target run, success-rate
+  comparison, dataset/checkpoint publication or paper-reproduction claim is included.
+- The user stopped repeated role passes; `FPJ034-VERIFY-SINGLE-01`, `FPJ034-AP-SINGLE-01` and
+  `FPJ034-QUAL-SINGLE-01` record that process choice. No hidden repeated test is claimed.
+- Baseline updated from `227 passed, 1 skipped` to `246 passed, 1 skipped`.
+- FPJ-034 marked complete and FPJ-035 activated at `implementation / ready`.
+- Recommended next role: FPJ-035 implementation.
 
 

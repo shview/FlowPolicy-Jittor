@@ -1,6 +1,6 @@
 """Reusable training loop for the Jittor FlowPolicy port.
 
-Scope (FPJ-024):
+Scope (FPJ-024 through FPJ-034):
 
 * AdamW over ``policy.trainable_parameters()`` only, so frozen parameters never
   receive updates;
@@ -8,9 +8,8 @@ Scope (FPJ-024):
 * deterministic per-step noise/time sampling derived from ``(seed, step)`` so an
   interrupted run can be resumed without relying on hidden RNG state;
 * a JSONL step log with step, learning rate and loss;
-* an optional paper-faithful EMA target over the encoder and the U-Net
-  (``ema_decay``); when it is disabled the checkpoint records ``ema: null``
-  explicitly, and when it is enabled the checkpoint carries the averaged weights;
+* in released-code mode, an optional stored-but-unused EMA shadow;
+* in detached mode, a required separate EMA target policy that supplies ``v_r``;
 * a **trainer** checkpoint that stores the policy payload, AdamW moments,
   ``n_step``, the global step, the schedule configuration and the EMA state.
 
@@ -20,6 +19,7 @@ checkpoint; the two must never be interchangeable.
 
 from __future__ import annotations
 
+import copy
 import json
 import math
 import os
@@ -31,10 +31,10 @@ import numpy as np
 
 import jittor as jt
 
-from .ema import EmaModel
+from .ema import DetachedEmaTarget, EmaModel
 
 TRAINER_KIND = "flowpolicy-jittor.trainer"
-TRAINER_SCHEMA_VERSION = 1
+TRAINER_SCHEMA_VERSION = 2
 _REQUIRED_PAYLOAD_KEYS = {"kind", "schema_version", "policy", "trainer"}
 _REQUIRED_TRAINER_KEYS = {
     "global_step",
@@ -47,6 +47,8 @@ _REQUIRED_TRAINER_KEYS = {
     "optimizer",
     "ema",
     "history",
+    "target_mode",
+    "provenance",
 }
 _SCHEDULE_KEYS = ("base_lr", "total_steps", "warmup_steps", "min_lr_ratio")
 
@@ -65,6 +67,29 @@ def _int_at_least(name: str, value: Any, minimum: int) -> int:
     if number < minimum:
         raise ValueError(f"{name} must be >= {minimum}, got {number}")
     return number
+
+
+def _plain_provenance(value: Any, *, path: str = "provenance") -> Any:
+    """Normalize immutable resume metadata to deterministic primitives."""
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    if isinstance(value, (float, np.floating)):
+        return _finite_float(path, value)
+    if isinstance(value, np.integer):
+        return int(value)
+    if isinstance(value, Mapping):
+        if any(not isinstance(key, str) for key in value):
+            raise TypeError(f"{path} keys must be strings")
+        return {
+            key: _plain_provenance(value[key], path=f"{path}.{key}")
+            for key in sorted(value)
+        }
+    if isinstance(value, Sequence) and not isinstance(value, (str, bytes)):
+        return [
+            _plain_provenance(item, path=f"{path}[{index}]")
+            for index, item in enumerate(value)
+        ]
+    raise TypeError(f"{path} contains unsupported value {value!r}")
 
 
 def warmup_cosine_lr(
@@ -129,12 +154,21 @@ class Trainer:
         log_every: int = 1,
         ema_decay: Optional[float] = None,
         ema_warmup_steps: int = 0,
+        provenance: Optional[Mapping[str, Any]] = None,
     ) -> None:
         if not hasattr(policy, "compute_loss") or not hasattr(
             policy, "trainable_parameters"
         ):
             raise TypeError("policy must be a FlowPolicy-like object")
         self.policy = policy
+        self.target_mode = getattr(getattr(policy, "loss_fn", None), "target_mode", None)
+        if self.target_mode not in {"code", "detached"}:
+            raise ValueError("policy.loss_fn.target_mode must be 'code' or 'detached'")
+        if self.target_mode == "detached" and ema_decay is None:
+            raise ValueError(
+                "target_mode='detached' requires ema_decay so a separate target "
+                "policy can be initialized and updated"
+            )
         self.base_lr = _finite_float("lr", lr)
         self.total_steps = _int_at_least("total_steps", total_steps, 1)
         self.warmup_steps = _int_at_least("warmup_steps", warmup_steps, 0)
@@ -144,12 +178,21 @@ class Trainer:
         if not 0.0 <= self.min_lr_ratio <= 1.0:
             raise ValueError("min_lr_ratio must be within [0, 1]")
         self.weight_decay = _finite_float("weight_decay", weight_decay)
+        if self.weight_decay < 0.0:
+            raise ValueError("weight_decay must be non-negative")
         self.betas = tuple(_finite_float("betas", value) for value in betas)
         if len(self.betas) != 2:
             raise ValueError("betas must have exactly two entries")
+        if any(value < 0.0 or value >= 1.0 for value in self.betas):
+            raise ValueError("betas must lie in [0, 1)")
         self.eps = _finite_float("eps", eps)
+        if self.eps <= 0.0:
+            raise ValueError("eps must be positive")
         self.seed = _int_at_least("seed", seed, 0)
         self.log_every = _int_at_least("log_every", log_every, 1)
+        if provenance is not None and not isinstance(provenance, Mapping):
+            raise TypeError("provenance must be a mapping or None")
+        self.provenance = _plain_provenance(provenance)
         self.global_step = 0
         self.history: List[Dict[str, Any]] = []
         self.log_path = Path(log_path) if log_path is not None else None
@@ -167,9 +210,10 @@ class Trainer:
             betas=self.betas,
             weight_decay=self.weight_decay,
         )
-        self.ema: Optional[EmaModel] = None
+        self.ema: Optional[Any] = None
         if ema_decay is not None:
-            self.ema = EmaModel(
+            ema_type = DetachedEmaTarget if self.target_mode == "detached" else EmaModel
+            self.ema = ema_type(
                 self.policy, decay=ema_decay, warmup_steps=ema_warmup_steps
             )
 
@@ -223,7 +267,15 @@ class Trainer:
         rate = self.learning_rate_at(step)
         self.optimizer.lr = rate
         noise, times = self._step_inputs(action.shape, step)
-        loss, _ = self.policy.compute_loss(batch, noise=noise, t=times)
+        target_policy = None
+        if isinstance(self.ema, DetachedEmaTarget):
+            target_policy = self.ema.target_policy
+        loss, _ = self.policy.compute_loss(
+            batch,
+            noise=noise,
+            t=times,
+            target_policy=target_policy,
+        )
         value = float(loss.item())
         if not math.isfinite(value):
             raise RuntimeError(f"non-finite loss at step {step}: {value}")
@@ -272,6 +324,17 @@ class Trainer:
                 "optimizer parameters no longer match policy.trainable_parameters(); "
                 "rebuild the trainer instead of mutating the policy"
             )
+        live_hyperparameters = (
+            float(self.optimizer.eps),
+            tuple(float(value) for value in self.optimizer.betas),
+            float(self.optimizer.weight_decay),
+        )
+        trainer_hyperparameters = (self.eps, self.betas, self.weight_decay)
+        if live_hyperparameters != trainer_hyperparameters:
+            raise RuntimeError(
+                "optimizer hyperparameters no longer match the trainer; rebuild the "
+                "trainer instead of mutating AdamW directly"
+            )
         return {
             "param_shapes": [list(int(size) for size in value.shape) for value in current],
             "m": [np.asarray(value.numpy()).copy() for value in group["m"]],
@@ -312,19 +375,84 @@ class Trainer:
         values = state["values"]
         if len(moments) != len(shapes) or len(values) != len(shapes):
             raise ValueError("optimizer moment lists do not match the parameter count")
-        group = self.optimizer.param_groups[0]
+        validated_moments = []
+        validated_values = []
         for index, (moment, value) in enumerate(zip(moments, values)):
-            array = np.asarray(moment, dtype=np.float32)
-            if list(array.shape) != shapes[index]:
-                raise ValueError(
-                    f"optimizer moment {index} has shape {list(array.shape)}, "
-                    f"expected {shapes[index]}"
-                )
-            group["m"][index] = jt.array(array).stop_grad()
-            group["values"][index] = jt.array(
-                np.asarray(value, dtype=np.float32)
-            ).stop_grad()
-        self.optimizer.n_step = _int_at_least("n_step", state["n_step"], 0)
+            arrays = []
+            for label, candidate in (("m", moment), ("values", value)):
+                array = np.asarray(candidate)
+                if not np.issubdtype(array.dtype, np.floating):
+                    raise TypeError(
+                        f"optimizer {label}[{index}] must have a floating dtype, "
+                        f"got {array.dtype}"
+                    )
+                if list(array.shape) != shapes[index]:
+                    raise ValueError(
+                        f"optimizer {label}[{index}] has shape {list(array.shape)}, "
+                        f"expected {shapes[index]}"
+                    )
+                if not np.all(np.isfinite(array)):
+                    raise ValueError(
+                        f"optimizer {label}[{index}] contains NaN or Inf"
+                    )
+                arrays.append(array.astype(np.float32, copy=True))
+            validated_moments.append(arrays[0])
+            validated_values.append(arrays[1])
+
+        n_step = _int_at_least("n_step", state["n_step"], 0)
+        eps = _finite_float("optimizer eps", state["eps"])
+        if eps <= 0.0:
+            raise ValueError("optimizer eps must be positive")
+        stored_betas = state["betas"]
+        if not isinstance(stored_betas, Sequence) or isinstance(
+            stored_betas, (str, bytes)
+        ) or len(stored_betas) != 2:
+            raise ValueError("optimizer betas must contain exactly two values")
+        betas = tuple(_finite_float("optimizer beta", value) for value in stored_betas)
+        if any(value < 0.0 or value >= 1.0 for value in betas):
+            raise ValueError("optimizer betas must lie in [0, 1)")
+        weight_decay = _finite_float(
+            "optimizer weight_decay", state["weight_decay"]
+        )
+        if weight_decay < 0.0:
+            raise ValueError("optimizer weight_decay must be non-negative")
+
+        # Commit only after the complete optimizer payload has passed validation.
+        group = self.optimizer.param_groups[0]
+        group["m"] = [jt.array(value).stop_grad() for value in validated_moments]
+        group["values"] = [
+            jt.array(value).stop_grad() for value in validated_values
+        ]
+        self.optimizer.n_step = n_step
+        self.eps = eps
+        self.betas = betas
+        self.weight_decay = weight_decay
+        self.optimizer.eps = eps
+        self.optimizer.betas = betas
+        self.optimizer.weight_decay = weight_decay
+
+    def _runtime_snapshot(self) -> Dict[str, Any]:
+        """Capture all mutable trainer state for transactional checkpoint loading."""
+        return {
+            "policy": {
+                name: np.asarray(value).copy()
+                for name, value in self.policy.state_dict(to="numpy").items()
+            },
+            "optimizer": self.optimizer_state(),
+            "ema": None if self.ema is None else copy.deepcopy(self.ema.state_dict()),
+            "global_step": int(self.global_step),
+            "history": copy.deepcopy(self.history),
+            "optimizer_lr": float(self.optimizer.lr),
+        }
+
+    def _restore_runtime_snapshot(self, snapshot: Mapping[str, Any]) -> None:
+        self.policy.load_policy_state_dict(snapshot["policy"])
+        self.load_optimizer_state(snapshot["optimizer"])
+        if self.ema is not None and snapshot["ema"] is not None:
+            self.ema.load_state_dict(snapshot["ema"])
+        self.global_step = int(snapshot["global_step"])
+        self.history = copy.deepcopy(snapshot["history"])
+        self.optimizer.lr = float(snapshot["optimizer_lr"])
 
     # ------------------------------------------------------------ checkpoint
     def _policy_payload(self) -> Dict[str, Any]:
@@ -351,10 +479,67 @@ class Trainer:
             "seed": self.seed,
             "log_every": self.log_every,
             "optimizer": self.optimizer_state(),
+            "target_mode": self.target_mode,
+            "provenance": copy.deepcopy(self.provenance),
             # `None` means "no EMA was tracked"; it is never silently omitted.
             "ema": self.ema.state_dict() if self.ema is not None else None,
             "history": self.history[-50:],
         }
+
+    def _validate_history(
+        self,
+        history: Any,
+        *,
+        global_step: int,
+        has_ema: bool,
+    ) -> List[Dict[str, Any]]:
+        if not isinstance(history, Sequence) or isinstance(history, (str, bytes)):
+            raise TypeError("trainer checkpoint history must be a sequence")
+        expected_count = min(global_step, 50)
+        if len(history) != expected_count:
+            raise ValueError(
+                "trainer checkpoint history length does not match global_step: "
+                f"stored={len(history)}, expected={expected_count}"
+            )
+        first_step = global_step - expected_count + 1
+        validated = []
+        for index, entry in enumerate(history):
+            if not isinstance(entry, Mapping):
+                raise TypeError(f"trainer history[{index}] must be a mapping")
+            required = {"step", "lr", "loss"}
+            optional = {"ema_decay"} if has_ema else set()
+            if set(entry) != required | optional:
+                raise KeyError(
+                    f"trainer history[{index}] keys mismatch: "
+                    f"expected={sorted(required | optional)}, got={sorted(entry)}"
+                )
+            step = _int_at_least(f"history[{index}].step", entry["step"], 1)
+            expected_step = first_step + index
+            if step != expected_step:
+                raise ValueError(
+                    f"trainer history[{index}] step {step} does not match "
+                    f"expected {expected_step}"
+                )
+            lr = _finite_float(f"history[{index}].lr", entry["lr"])
+            expected_lr = self.learning_rate_at(step)
+            if not math.isclose(lr, expected_lr, rel_tol=1e-12, abs_tol=0.0):
+                raise ValueError(
+                    f"trainer history[{index}] learning rate does not match schedule"
+                )
+            record = {
+                "step": step,
+                "lr": lr,
+                "loss": _finite_float(f"history[{index}].loss", entry["loss"]),
+            }
+            if has_ema:
+                decay = _finite_float(
+                    f"history[{index}].ema_decay", entry["ema_decay"]
+                )
+                if not 0.0 < decay <= 1.0:
+                    raise ValueError("history ema_decay must lie in (0, 1]")
+                record["ema_decay"] = decay
+            validated.append(record)
+        return validated
 
     def save_checkpoint(self, path: Any, *, overwrite: bool = False) -> None:
         destination = Path(path)
@@ -397,6 +582,12 @@ class Trainer:
                 f"unexpected={sorted(set(payload) - _REQUIRED_PAYLOAD_KEYS)}"
             )
         if payload["schema_version"] != TRAINER_SCHEMA_VERSION:
+            if payload["schema_version"] == 1:
+                raise ValueError(
+                    "trainer checkpoint schema 1 predates explicit target_mode "
+                    "semantics; resume it with the matching older release or start "
+                    "a new schema-2 run"
+                )
             raise ValueError(
                 "trainer checkpoint schema version mismatch: "
                 f"loaded={payload['schema_version']!r}, "
@@ -410,6 +601,24 @@ class Trainer:
                 "trainer state keys mismatch: "
                 f"missing={sorted(_REQUIRED_TRAINER_KEYS - set(state))}, "
                 f"unexpected={sorted(set(state) - _REQUIRED_TRAINER_KEYS)}"
+            )
+
+        stored_provenance = _plain_provenance(state["provenance"])
+        if stored_provenance is not None and not isinstance(
+            stored_provenance, Mapping
+        ):
+            raise TypeError("trainer checkpoint provenance must be a mapping or None")
+        if stored_provenance != self.provenance:
+            stored_mapping = stored_provenance or {}
+            current_mapping = self.provenance or {}
+            differing = sorted(
+                key
+                for key in set(stored_mapping) | set(current_mapping)
+                if stored_mapping.get(key) != current_mapping.get(key)
+            )
+            raise ValueError(
+                "trainer checkpoint resume provenance mismatch in fields: "
+                + ", ".join(differing)
             )
 
         stored = {
@@ -427,6 +636,16 @@ class Trainer:
                 "trainer checkpoint schedule does not match this trainer: "
                 + ", ".join(differing)
             )
+        stored_target_mode = state["target_mode"]
+        if stored_target_mode not in {"code", "detached"}:
+            raise ValueError(
+                f"trainer checkpoint target_mode is invalid: {stored_target_mode!r}"
+            )
+        if stored_target_mode != self.target_mode:
+            raise ValueError(
+                "trainer checkpoint target_mode does not match this policy: "
+                f"stored={stored_target_mode!r}, current={self.target_mode!r}"
+            )
         stored_ema = state["ema"]
         if stored_ema is not None and self.ema is None:
             raise ValueError(
@@ -438,6 +657,14 @@ class Trainer:
                 "trainer checkpoint has no EMA state but this trainer tracks one; "
                 "resume with a trainer built without ema_decay, or retrain"
             )
+        if self.target_mode == "detached" and not isinstance(
+            self.ema, DetachedEmaTarget
+        ):
+            raise ValueError(
+                "detached checkpoint requires a live DetachedEmaTarget controller"
+            )
+        if self.target_mode == "code" and isinstance(self.ema, DetachedEmaTarget):
+            raise ValueError("code checkpoint cannot be loaded into a detached target")
 
         global_step = _int_at_least("global_step", state["global_step"], 0)
         if global_step > self.total_steps:
@@ -447,22 +674,66 @@ class Trainer:
             raise ValueError(
                 f"trainer checkpoint seed {seed} does not match trainer seed {self.seed}"
             )
+        log_every = _int_at_least("log_every", state["log_every"], 1)
+        if log_every != self.log_every:
+            raise ValueError(
+                "trainer checkpoint log_every does not match this trainer: "
+                f"stored={log_every}, current={self.log_every}"
+            )
+        if not isinstance(state["optimizer"], Mapping):
+            raise TypeError("optimizer state must be a mapping")
+        optimizer_step = _int_at_least(
+            "optimizer n_step", state["optimizer"].get("n_step"), 0
+        )
+        if optimizer_step != global_step:
+            raise ValueError(
+                "trainer checkpoint optimizer n_step does not match global_step: "
+                f"optimizer={optimizer_step}, global_step={global_step}"
+            )
+        if stored_ema is not None:
+            if not isinstance(stored_ema, Mapping):
+                raise TypeError("EMA state must be a mapping")
+            ema_step = _int_at_least(
+                "EMA optimization_step", stored_ema.get("optimization_step"), 0
+            )
+            if ema_step != global_step:
+                raise ValueError(
+                    "trainer checkpoint EMA optimization_step does not match "
+                    f"global_step: ema={ema_step}, global_step={global_step}"
+                )
+        history = self._validate_history(
+            state["history"], global_step=global_step, has_ema=stored_ema is not None
+        )
 
-        # Restore the policy payload through the strict policy loader first, so a
-        # corrupted or reconfigured policy aborts before any optimizer mutation.
-        handle, name = tempfile.mkstemp(prefix=".fpj-trainer-restore-", suffix=".ckpt")
-        os.close(handle)
-        temporary = Path(name)
+        # From this point onward every component load is transactional as a group.
+        snapshot = self._runtime_snapshot()
         try:
-            jt.save(dict(payload["policy"]), str(temporary))
-            policy_extra = self.policy.load_checkpoint(temporary)
-        finally:
-            temporary.unlink(missing_ok=True)
+            # Restore the policy payload through the strict policy loader first, so a
+            # corrupted or reconfigured policy aborts before optimizer mutation.
+            handle, name = tempfile.mkstemp(
+                prefix=".fpj-trainer-restore-", suffix=".ckpt"
+            )
+            os.close(handle)
+            temporary = Path(name)
+            try:
+                jt.save(dict(payload["policy"]), str(temporary))
+                policy_extra = self.policy.load_checkpoint(temporary)
+            finally:
+                temporary.unlink(missing_ok=True)
 
-        self.load_optimizer_state(state["optimizer"])
-        if stored_ema is not None and self.ema is not None:
-            self.ema.load_state_dict(stored_ema)
-        self.global_step = global_step
-        self.history = [dict(entry) for entry in state["history"]]
-        self.optimizer.lr = self.learning_rate
-        return dict(policy_extra)
+            self.load_optimizer_state(state["optimizer"])
+            if stored_ema is not None and self.ema is not None:
+                self.ema.load_state_dict(stored_ema)
+            self.global_step = global_step
+            self.history = history
+            self.optimizer.lr = self.learning_rate
+            return dict(policy_extra)
+        except Exception as error:
+            try:
+                self._restore_runtime_snapshot(snapshot)
+            except Exception as rollback_error:
+                raise RuntimeError(
+                    "trainer checkpoint load failed and rollback also failed: "
+                    f"{rollback_error}"
+                ) from error
+            raise

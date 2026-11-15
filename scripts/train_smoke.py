@@ -173,6 +173,7 @@ def build_policy(
     var_fc_hidden_dim,
     seed,
     action_slice_mode="code",
+    target_mode="code",
 ):
     import jittor as jt
 
@@ -210,6 +211,7 @@ def build_policy(
         },
         var_fc_hidden_dim=var_fc_hidden_dim,
         action_slice_mode=action_slice_mode,
+        target_mode=target_mode,
     )
     policy.set_normalizer(dataset.get_normalizer())
     return policy
@@ -240,6 +242,15 @@ def main(argv=None) -> int:
         help="Jittor backend used for training",
     )
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument(
+        "--target-mode",
+        choices=("code", "detached"),
+        default="code",
+        help=(
+            "code uses the released single-network target; detached uses a separate "
+            "EMA target policy and requires --ema-decay"
+        ),
+    )
     parser.add_argument(
         "--ema-decay",
         type=float,
@@ -281,8 +292,12 @@ def main(argv=None) -> int:
         raise SystemExit("--epochs must be at least 1")
     if args.ema_decay is not None and not 0.0 < args.ema_decay < 1.0:
         raise SystemExit("--ema-decay must lie strictly between 0 and 1")
+    if args.target_mode == "detached" and args.ema_decay is None:
+        raise SystemExit("--target-mode detached requires --ema-decay")
     if args.ema_warmup_steps < 0:
         raise SystemExit("--ema-warmup-steps must be non-negative")
+    if args.ema_decay is None and args.ema_warmup_steps != 0:
+        raise SystemExit("--ema-warmup-steps requires --ema-decay")
     if args.checkpoint_every < 0:
         raise SystemExit("--checkpoint-every must be non-negative")
     if args.stop_after_epoch is not None and not 1 <= args.stop_after_epoch <= args.epochs:
@@ -311,6 +326,35 @@ def main(argv=None) -> int:
     windows = int(dataset.num_windows)
     steps_per_epoch = max(1, windows // args.batch_size)
     total_steps = max(1, steps_per_epoch * args.epochs)
+    data_sha256 = sha256_tree(args.data)
+    run_config = {
+        "data_sha256": data_sha256,
+        "device": args.device,
+        "epochs": args.epochs,
+        "batch_size": args.batch_size,
+        "steps_per_epoch": steps_per_epoch,
+        "total_steps": total_steps,
+        "down_dims": list(args.down_dims),
+        "embed_dim": args.embed_dim,
+        "encoder_out": args.encoder_out,
+        "pointnet_out": args.pointnet_out,
+        "kernel_size": args.kernel_size,
+        "n_groups": args.n_groups,
+        "var_fc_hidden_dim": args.var_fc_hidden_dim,
+        "lr": args.lr,
+        "warmup": args.warmup,
+        "min_lr_ratio": 0.05,
+        "num_points": args.num_points,
+        "val_ratio": args.val_ratio,
+        "seed": args.seed,
+        "horizon": 4,
+        "n_obs_steps": 2,
+        "n_action_steps": 4,
+        "action_slice_mode": "code",
+        "target_mode": args.target_mode,
+        "ema_decay": args.ema_decay,
+        "ema_warmup_steps": args.ema_warmup_steps,
+    }
     policy = build_policy(
         dataset,
         down_dims=tuple(args.down_dims),
@@ -321,6 +365,7 @@ def main(argv=None) -> int:
         n_groups=args.n_groups,
         var_fc_hidden_dim=args.var_fc_hidden_dim,
         seed=args.seed,
+        target_mode=args.target_mode,
     )
     trainer = Trainer(
         policy,
@@ -332,6 +377,7 @@ def main(argv=None) -> int:
         log_path=log_path,
         ema_decay=args.ema_decay,
         ema_warmup_steps=args.ema_warmup_steps,
+        provenance=run_config,
     )
 
     rng = np.random.default_rng([args.seed, 0xA11CE])
@@ -339,7 +385,21 @@ def main(argv=None) -> int:
     start_epoch = 0
     resumed_from = None
     if args.resume is not None:
-        trainer.load_checkpoint(args.resume)
+        try:
+            trainer.load_checkpoint(args.resume)
+        except (KeyError, TypeError, ValueError, RuntimeError) as error:
+            raise SystemExit(f"resume checkpoint rejected: {error}") from error
+        effective_decay = None if trainer.ema is None else trainer.ema.decay
+        effective_warmup = (
+            0 if trainer.ema is None else trainer.ema.warmup_steps
+        )
+        if args.ema_decay != effective_decay or args.ema_warmup_steps != effective_warmup:
+            raise SystemExit(
+                "resume EMA configuration mismatch: checkpoint uses "
+                f"decay={effective_decay!r}, warmup_steps={effective_warmup}; "
+                f"CLI requested decay={args.ema_decay!r}, "
+                f"warmup_steps={args.ema_warmup_steps}"
+            )
         if trainer.global_step % steps_per_epoch != 0:
             raise SystemExit(
                 "resume checkpoint is not at an epoch boundary: "
@@ -460,7 +520,10 @@ def main(argv=None) -> int:
         value_sample = min(int(validation.num_windows), 32)
         indices = np.linspace(0, int(validation.num_windows) - 1, value_sample).astype(int)
         batch = collate([validation[int(index)] for index in indices])
-        loss, _logs = policy.compute_loss(batch)
+        loss, _logs = policy.compute_loss(
+            batch,
+            target_policy=getattr(trainer.ema, "target_policy", None),
+        )
         val_loss = float(loss.item())
 
     checkpoint = out_dir / "policy.ckpt"
@@ -469,20 +532,11 @@ def main(argv=None) -> int:
     # global_step and the schedule.  The policy checkpoint remains the rollout artifact.
     trainer_checkpoint = out_dir / "trainer.ckpt"
     trainer.save_checkpoint(trainer_checkpoint, overwrite=args.overwrite)
-    model_config = {
-        "down_dims": args.down_dims,
-        "embed_dim": args.embed_dim,
-        "encoder_out": args.encoder_out,
-        "pointnet_out": args.pointnet_out,
-        "kernel_size": args.kernel_size,
-        "n_groups": args.n_groups,
-        "var_fc_hidden_dim": args.var_fc_hidden_dim,
-        "lr": args.lr,
-        "warmup": args.warmup,
-        "num_points": args.num_points,
-        "val_ratio": args.val_ratio,
-        "seed": args.seed,
-    }
+    effective_ema_decay = None if trainer.ema is None else trainer.ema.decay
+    effective_ema_warmup = 0 if trainer.ema is None else trainer.ema.warmup_steps
+    model_config = dict(run_config)
+    model_config["ema_decay"] = effective_ema_decay
+    model_config["ema_warmup_steps"] = effective_ema_warmup
     config_sha256 = hashlib.sha256(
         json.dumps(model_config, sort_keys=True, separators=(",", ":")).encode("utf-8")
     ).hexdigest()
@@ -494,7 +548,7 @@ def main(argv=None) -> int:
         "paper_architecture": paper_architecture,
         "runtime": runtime_fingerprint(jt, args.device),
         "data": str(args.data),
-        "data_sha256": sha256_tree(args.data),
+        "data_sha256": data_sha256,
         "train_windows": windows,
         "val_windows": int(validation.num_windows),
         "epochs": args.epochs,
@@ -540,15 +594,30 @@ def main(argv=None) -> int:
         },
         "ema": {
             "enabled": trainer.ema is not None,
-            "decay": args.ema_decay,
-            "warmup_steps": args.ema_warmup_steps,
+            "role": (
+                "none"
+                if trainer.ema is None
+                else (
+                    "detached_loss_target"
+                    if args.target_mode == "detached"
+                    else "stored_shadow_not_used_by_loss"
+                )
+            ),
+            "decay": effective_ema_decay,
+            "warmup_steps": effective_ema_warmup,
             "optimization_step": None if trainer.ema is None else trainer.ema.optimization_step,
             "effective_decay": None if trainer.ema is None else trainer.ema.effective_decay(),
             "trainer_checkpoint": str(trainer_checkpoint),
             "note": (
-                "EMA weights are the target for the flow-matching update in the paper; "
-                "this run keeps them in the trainer checkpoint only and evaluates the "
-                "online policy"
+                "EMA is disabled for this run."
+                if trainer.ema is None
+                else (
+                    "A separate frozen EMA policy supplies v_r and is saved in the trainer "
+                    "checkpoint; evaluation still uses the online policy."
+                    if args.target_mode == "detached"
+                    else "EMA weights are stored in the trainer checkpoint but the "
+                    "released-code loss still uses the online policy for v_r."
+                )
             ),
         },
         "prohibited_claims": [
@@ -558,7 +627,13 @@ def main(argv=None) -> int:
                 if paper_architecture
                 else f"not the paper training configuration (small channels, {args.device.upper()})"
             ),
-            "with --ema-decay EMA weights are tracked but not used as the loss target",
+            (
+                "detached EMA target is an implemented comparison mode, not evidence "
+                "that the complete paper recipe was reproduced"
+                if args.target_mode == "detached"
+                else "in code mode --ema-decay tracks weights but does not use them as "
+                "the loss target"
+            ),
             "no success rate is implied by the training loss",
         ],
     }

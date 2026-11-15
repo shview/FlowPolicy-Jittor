@@ -35,7 +35,7 @@ f_t = x_t + (s-t) v_t
 L = mean(||f_t-f_r||²) + α mean(mask · ||v_t-v_r||²)
 ```
 
-公开 `FlowPolicy.compute_loss()` 用同一个当前模型计算 `v_t` 和 `v_r`，两个分支都保留梯度；论文公式则把后一个预测写成 EMA 参数。项目把前者标为 `code-faithful` 基线，EMA target 只能在顶层真正维护、保存并加载 EMA 模型后再称为 `paper-faithful`，不能只加一次 `stop_gradient` 就混用名称。
+公开 `FlowPolicy.compute_loss()` 用同一个当前模型计算 `v_t` 和 `v_r`，两个分支都保留梯度；论文公式则把后一个预测写成 EMA 参数。项目默认保留前者作为 `code-faithful` 基线，另提供真正分离的 detached target：target 有自己的编码器和 U-Net，全部停止梯度，只在在线 optimizer step 之后由 EMA 更新。它是待对照的训练模式，不能因为功能接通就说完整论文配方已经复现。
 
 ### Q4：没有真实机械臂，复现是否成立？
 
@@ -49,10 +49,10 @@ L = mean(||f_t-f_r||²) + α mean(mask · ||v_t-v_r||²)
 
 ### “哪些代码是 Jittor，哪些不是？”
 
-- 当前已完成的 Jittor 部分：PointNet、状态编码器、Conditional U-Net、归一化器、CFM loss、顶层 policy、Zarr 数据集、训练器、AdamW、EMA 状态、policy/trainer checkpoint 和单步动作推理。
+- 当前已完成的 Jittor 部分：PointNet、状态编码器、Conditional U-Net、归一化器、CFM loss、顶层 policy、Zarr 数据集、训练器、AdamW、stored EMA、detached EMA target、policy/trainer checkpoint 和单步动作推理。
 - checkpoint 不只校验权重 shape，还固定本实现版本、Jittor 版本、网络、loss、NFE 和动作切片配置；保存前会从真实运行对象重建配置，加载失败会回滚，防止同一权重在 `code`/`exact` 模式下静默执行 3/4 步。
 - 已完成：真实示范训练、checkpoint 恢复、5-episode 管线 smoke、2 任务 × 3 seeds × 20 episodes 的 CPU 低预算闭环评测，以及两个任务的完整通道 A10 三 seed 有限预算训练与评测。
-- 尚未完成：论文 3000 epochs 长训练、论文式 detached EMA target，以及成功/失败视频整理。不能把 30 epochs、现代替代仿真栈的结果表述成完整论文配方复现。
+- 尚未完成：论文 3000 epochs 长训练、detached 与 released-code target 的同预算正式对照，以及成功/失败视频整理。不能把 30 epochs、现代替代仿真栈或仅完成目标网络实现表述成完整论文配方复现。
 - 非 Jittor：MuJoCo 物理引擎、MetaWorld 环境、官方专家策略、Zarr 文件读写。
 - 点云 FPS 使用 NumPy 实现；训练与仿真链路不依赖 PyTorch。PyTorch 只在隔离的 parity-env 中作为数值参照，不能把这项对照混入 Jittor 训练图。
 
@@ -138,7 +138,8 @@ Jittor 闭环可运行和任务难度差异，不能与论文成功率直接比�
   `data/reach-wall-v3.zarr`（各 20×120）；
 - 训练与闭环：`scripts/train_smoke.py` + `scripts/rollout.py`（跨环境进程桥），
   带配置指纹的 checkpoint、trainer checkpoint（AdamW 矩 + EMA）；
-- EMA：`EmaModel` 逐步更新、存进 trainer checkpoint、恢复时双向校验（D018）；
+- EMA：`EmaModel` 是 code 模式下存储但不参与 loss 的影子；`DetachedEmaTarget` 才是 loss 读取的独立
+  target policy，两者都检查 checkpoint 模式，不允许静默互换（D018、D021）；
 - 跨框架 parity：独立 PyTorch 镜像对 action_pred / loss / 168 个梯度做对照，
   170 项检查、最差偏差 1.6e-09（`outputs/parity/parity.json`）；
 - 全通道（512/1024/2048）CPU 单步前反向：2.55 亿参数、约 4 s/step、峰值 4.5 GB；
@@ -154,10 +155,10 @@ Jittor 闭环可运行和任务难度差异，不能与论文成功率直接比�
 
 - **本机 CUDA 仍未配置，但云端 A10 已验证**：本机 RTX 5060 缺少适配 Blackwell 的 toolkit；
   云端 A10 使用 CUDA 12.1。CPU 实验表仍然是 CPU 结果，不能因为云端可用就改写其来源；
-- **完整通道 GPU 训练已完成两个任务的有限预算试验，但不是论文完整配方**：每个任务只有 30 epochs，
-  未跑论文 3000 epochs，也未启用 detached EMA target；
-- **EMA 没有作为损失目标**：loss 里 `v_r` 仍由当前模型给出（`target_mode="code"`，与 released 代码一致）；
-  论文式 detached 目标未实现，原因写在 D018；
+- **已发布的完整通道 GPU 结果仍是 released-code target**：每个任务只有 30 epochs，未跑论文
+  3000 epochs；新增 detached 模式没有回写或改变这 120 个 episode 的实验口径；
+- **EMA 需要区分用途**：默认 loss 的 `v_r` 仍由当前模型给出；只有显式
+  `target_mode="detached"` 且配置 `ema_decay` 时，独立 target 才参与 loss。目前尚无正式成功率对照；
 - parity 只覆盖小配置模型，不是论文规模；
 - 仿真栈是替代实现（D016），成功率不能与论文数字直接比较；
 - 示范数量少（10/20 条）；CPU 小通道结果与 A10 完整通道结果预算不同，不能直接归因于框架或只比较百分比。

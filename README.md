@@ -84,12 +84,14 @@ python scripts/rollout.py --data data/reach-wall-v3.zarr \
 - [x] 采集真实示范 `data/reach-v3.zarr`（10 条 × 120 步，同 seed 可复现）。
 - [x] 采集第二个任务示范 `data/button-press-wall-v3.zarr`（20 条 × 120 步）。
 - [x] 真实示范上的训练与闭环 rollout（`scripts/train_smoke.py`、`scripts/rollout.py`）。
-- [x] EMA 权重与 trainer checkpoint（`src/flowpolicy_jittor/training/ema.py`，见 D018）。
+- [x] released-code 模式的 EMA 影子权重与 trainer checkpoint（D018）。
+- [x] 独立、冻结的 detached EMA target 比较模式：编码器与 U-Net 都由 EMA 更新，保存进
+      trainer checkpoint；默认仍为 released-code target（D021）。
 - [x] 跨框架数值对照：独立 PyTorch 镜像对前向、loss 与全部梯度做 parity（`outputs/parity/parity.json`）。
 - [x] 完整通道（512/1024/2048）CPU 单步前反向；本机 CUDA 探测结论为不可用并留证（`outputs/cuda/report.json`）。
 - [x] 阿里云 PAI-DSW A10 环境完成真实 Jittor CUDA 检测；小通道真实数据训练和完整通道单步前反向均通过。
 - [x] 低预算实验网格：2 任务 × 3 seeds × 20 episodes，一条命令复跑（`scripts/experiments.py`，见 `outputs/experiments/`）。
-- [x] CPU 回归基线：`213 passed, 1 skipped`；主环境跳过的 PyTorch parity 已在独立 parity-env 完成 170 项检查。
+- [x] CPU 回归候选：`246 passed, 1 skipped`；主环境跳过的 PyTorch parity 已在独立 parity-env 完成 170 项检查。
 - [x] GPU 可行性验证：A10 23 GB、CUDA 12.1、Jittor 1.3.11；`reach-v3` 真实数据完成 34 次参数更新并保存 checkpoint。
 - [x] A10 论文结构有限预算实验：完整通道、3 seeds、每 seed 30 epochs + 20 个闭环 episode，配置、哈希和逐回合结果均已保存。
 - [x] `reach-wall-v3` 本地门槛：10/10 专家变体合格；20 条正式示范可确定性重录；真实数据的计划停止/恢复训练和 5-episode 闭环 smoke 已通过。
@@ -120,8 +122,9 @@ python scripts/rollout.py --data data/reach-wall-v3.zarr \
 `outputs/experiments/SUMMARY.md`。
 
 当前已经完成 CPU 闭环证据链、A10 CUDA 可行性验证，以及两个任务的完整 512/1024/2048 通道三 seed
-有限预算训练（共 120 个闭环 episode）。尚未完成论文 3000 epochs 配方、原版旧仿真栈逐项对齐、
-论文式 detached EMA target 以及成功/失败视频整理。代码已发布到
+有限预算训练（共 120 个闭环 episode）。detached EMA target 已作为独立训练模式接入，但尚未与
+released-code target 做相同预算的正式成功率对照。论文 3000 epochs 配方、原版旧仿真栈逐项对齐和
+成功/失败视频也尚未完成。代码已发布到
 <https://github.com/shview/FlowPolicy-Jittor>；这不改变实验边界，仍不能写成“论文成功率已复现”。
 
 阿里云环境、持久化路径、复跑命令和证据边界见 [云端环境记录](docs/CLOUD_ALIYUN.md)。
@@ -130,6 +133,21 @@ A10 三 seed 正式有限预算结果见 [FPJ-033 formal bundle](evidence/fpj033
 配置、逻辑数据指纹、训练摘要、checkpoint 哈希和 60 个 episode 明细，不包含 Zarr 数据或 checkpoint 本体。
 
 公开代码在默认 `horizon=4 / n_obs_steps=2 / n_action_steps=4` 下从索引 1 开始切动作，因此实际只返回 3 步。本项目默认保留这一 `code-faithful` 行为，同时提供显式 `action_slice_mode="exact"` 对照；不会把修正后的 4 步结果混入基线。
+
+训练目标也分三种口径，不能只看“是否传了 `ema_decay`”：
+
+- `target_mode="code"`（默认）：`v_t`、`v_r` 都由在线模型计算，与 released code 一致；
+- `target_mode="code"` + `ema_decay`：额外保存 EMA 影子权重，但它不参与 loss；
+- `target_mode="detached"` + `ema_decay`：创建完整的冻结 target policy，`v_r` 使用 target 的编码器与
+  U-Net，在线更新后再做 EMA；trainer checkpoint 同时保存在线状态、AdamW 超参数与矩、调度和
+  target 状态。加载会交叉核对 trainer/optimizer/EMA 步数，并绑定数据 SHA、batch size 和完整训练
+  配置；采用整体回滚，损坏或来源不一致的 checkpoint 不会留下半恢复状态。
+
+小 CPU 配置的资源探测命令为 `python scripts/detached_target_probe.py`；记录见
+[`evidence/fpj034/resource_probe.json`](evidence/fpj034/resource_probe.json)。本次 10.3 万在线参数配置中，
+detached 构造阶段 RSS 比无 EMA code 模式多 3.75 MiB；JIT warm-up 后五步中位数为 53.9 ms 对 59.0 ms，
+没有测到减速（detached 分支无需为 `v_r` 保存反向图）。这个短小 CPU 测量噪声较大，只用于确认实现
+成本，不能外推完整通道显存或成功率；正式 target 对照属于下一阶段。
 
 后续训练器构造 Jittor AdamW 时必须使用 `policy.trainable_parameters()`，不能直接传 `policy.parameters()`；后者仍包含为上游 state 结构保留、但已冻结的 `var_est` 参数与 normalizer buffers。
 

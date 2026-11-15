@@ -104,7 +104,7 @@ Gate `FPJ033-GATE-01` 通过。`reach-wall-v3` 的 10 个专家 variant 全部�
 
 ## 当前任务
 
-### [>] FPJ-034：论文式 detached EMA target
+### [x] FPJ-034：论文式 detached EMA target
 
 - 为 `v_r` 增加与在线 policy 分离、不可训练且显式 detached 的 EMA target；不能只在在线输出上
   加 `stop_gradient`，也不能改变现有 `target_mode="code"` 的默认行为；
@@ -117,7 +117,7 @@ Gate `FPJ033-GATE-01` 通过。`reach-wall-v3` 的 10 个专家 variant 全部�
 
 ## 后续顺序
 
-### [ ] FPJ-035：target 语义对照
+### [>] FPJ-035：target 语义对照
 
 在相同任务、示范、seed、点数和训练预算下比较 released-code target 与 detached EMA target；
 先报告损失、稳定性与资源开销，再决定是否值得扩到完整通道。

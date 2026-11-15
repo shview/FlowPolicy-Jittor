@@ -1,5 +1,6 @@
 """Tests for the FPJ-024 trainer: schedule, checkpoint, resume and guard rails."""
 
+import copy
 import json
 import math
 from pathlib import Path
@@ -251,6 +252,23 @@ def test_trainer_checkpoint_roundtrip_restores_schedule_and_ema_marker(tmp_path:
         np.testing.assert_array_equal(_snapshot(fresh_policy)[key], value)
 
 
+def test_legacy_trainer_checkpoint_is_rejected_with_target_semantics_message(
+    tmp_path: Path,
+):
+    policy, batch = _ready_policy()
+    trainer = _trainer(policy)
+    trainer.fit(batch, steps=1)
+    current = tmp_path / "current.ckpt"
+    legacy = tmp_path / "legacy.ckpt"
+    trainer.save_checkpoint(current)
+    payload = jt.load(str(current))
+    payload["schema_version"] = 1
+    payload["trainer"].pop("target_mode")
+    jt.save(payload, str(legacy))
+    with pytest.raises(ValueError, match="predates explicit target_mode semantics"):
+        _trainer(_ready_policy()[0]).load_checkpoint(legacy)
+
+
 def test_resume_restores_exact_state_and_continues_the_schedule(tmp_path: Path):
     """Resume must restore the exact checkpointed state and the remaining schedule.
 
@@ -367,6 +385,174 @@ def test_resume_rejects_a_different_policy_layout(tmp_path: Path):
     with pytest.raises(ValueError, match="shape_meta|parameter layout"):
         other.load_checkpoint(path)
     assert other.global_step == 0
+
+
+def test_resume_restores_adamw_hyperparameters(tmp_path: Path):
+    policy, batch = _ready_policy()
+    trainer = _trainer(
+        policy,
+        eps=1e-7,
+        betas=(0.8, 0.95),
+        weight_decay=2e-4,
+    )
+    trainer.fit(batch, steps=1)
+    path = tmp_path / "optimizer-hparams.ckpt"
+    trainer.save_checkpoint(path)
+
+    other_policy, _ = _ready_policy()
+    other = _trainer(
+        other_policy,
+        eps=0.5,
+        betas=(0.1, 0.2),
+        weight_decay=0.9,
+    )
+    other.load_checkpoint(path)
+    assert other.eps == pytest.approx(1e-7)
+    assert other.betas == pytest.approx((0.8, 0.95))
+    assert other.weight_decay == pytest.approx(2e-4)
+    assert other.optimizer.eps == pytest.approx(other.eps)
+    assert other.optimizer.betas == pytest.approx(other.betas)
+    assert other.optimizer.weight_decay == pytest.approx(other.weight_decay)
+
+
+def test_resume_provenance_must_match(tmp_path: Path):
+    policy, batch = _ready_policy()
+    trainer = _trainer(policy, provenance={"data_sha256": "a", "batch_size": 8})
+    trainer.fit(batch, steps=1)
+    path = tmp_path / "provenance.ckpt"
+    trainer.save_checkpoint(path)
+    other_policy, _ = _ready_policy()
+    other = _trainer(
+        other_policy, provenance={"data_sha256": "b", "batch_size": 8}
+    )
+    with pytest.raises(ValueError, match="provenance mismatch.*data_sha256"):
+        other.load_checkpoint(path)
+    assert other.global_step == 0
+
+
+@pytest.mark.parametrize("counter", ["optimizer", "ema"])
+def test_resume_rejects_counters_inconsistent_with_global_step(
+    tmp_path: Path, counter: str
+):
+    policy, batch = _ready_policy(target_mode="detached")
+    trainer = _trainer(policy, ema_decay=0.9)
+    trainer.fit(batch, steps=1)
+    valid = tmp_path / "counter-valid.ckpt"
+    broken = tmp_path / f"counter-{counter}.ckpt"
+    trainer.save_checkpoint(valid)
+    payload = jt.load(str(valid))
+    if counter == "optimizer":
+        payload["trainer"]["optimizer"]["n_step"] = 99
+    else:
+        payload["trainer"]["ema"]["optimization_step"] = 99
+    jt.save(payload, str(broken))
+
+    target_policy, _ = _ready_policy(seed=99, target_mode="detached")
+    target = _trainer(target_policy, ema_decay=0.9)
+    online_before = _snapshot(target_policy)
+    ema_before = {
+        name: np.asarray(value).copy()
+        for name, value in target.ema.target_policy.state_dict(to="numpy").items()
+    }
+    with pytest.raises(ValueError, match="does not match global_step"):
+        target.load_checkpoint(broken)
+    assert target.global_step == 0
+    assert target.optimizer.n_step == 0
+    assert target.ema.optimization_step == 0
+    for name, value in online_before.items():
+        np.testing.assert_array_equal(_snapshot(target_policy)[name], value)
+    actual_ema = target.ema.target_policy.state_dict(to="numpy")
+    for name, value in ema_before.items():
+        np.testing.assert_array_equal(actual_ema[name], value)
+
+
+def test_resume_rejects_invalid_history_and_log_every(tmp_path: Path):
+    policy, batch = _ready_policy()
+    trainer = _trainer(policy)
+    trainer.fit(batch, steps=1)
+    valid = tmp_path / "history-valid.ckpt"
+    trainer.save_checkpoint(valid)
+    payload = jt.load(str(valid))
+
+    future = copy.deepcopy(payload)
+    future["trainer"]["history"][0]["step"] = 999
+    future["trainer"]["history"][0]["loss"] = float("nan")
+    future_path = tmp_path / "history-future.ckpt"
+    jt.save(future, str(future_path))
+    with pytest.raises(ValueError, match=r"history\[0\].*step"):
+        _trainer(_ready_policy()[0]).load_checkpoint(future_path)
+
+    different_log = copy.deepcopy(payload)
+    different_log["trainer"]["log_every"] = 999
+    log_path = tmp_path / "log-every.ckpt"
+    jt.save(different_log, str(log_path))
+    with pytest.raises(ValueError, match="log_every does not match"):
+        _trainer(_ready_policy()[0]).load_checkpoint(log_path)
+
+
+@pytest.mark.parametrize("field", ["m", "values"])
+def test_malformed_optimizer_tensor_is_rejected_without_partial_restore(
+    tmp_path: Path, field: str
+):
+    policy, batch = _ready_policy()
+    trainer = _trainer(policy)
+    trainer.fit(batch, steps=1)
+    valid = tmp_path / "valid.ckpt"
+    broken = tmp_path / f"broken-{field}.ckpt"
+    trainer.save_checkpoint(valid)
+    payload = jt.load(str(valid))
+    payload["trainer"]["optimizer"][field][0] = np.zeros((1,), dtype=np.float32)
+    jt.save(payload, str(broken))
+
+    target_policy, _ = _ready_policy(seed=99)
+    target = _trainer(
+        target_policy,
+        eps=0.25,
+        betas=(0.2, 0.3),
+        weight_decay=0.4,
+    )
+    policy_before = _snapshot(target_policy)
+    optimizer_before = target.optimizer_state()
+    with pytest.raises(ValueError, match=rf"optimizer {field}\[0\].*shape"):
+        target.load_checkpoint(broken)
+    assert target.global_step == 0
+    assert target.history == []
+    for name, value in policy_before.items():
+        np.testing.assert_array_equal(_snapshot(target_policy)[name], value)
+    optimizer_after = target.optimizer_state()
+    assert optimizer_after["n_step"] == optimizer_before["n_step"]
+    assert optimizer_after["eps"] == optimizer_before["eps"]
+    assert optimizer_after["betas"] == optimizer_before["betas"]
+    assert optimizer_after["weight_decay"] == optimizer_before["weight_decay"]
+    for key in ("m", "values"):
+        for left, right in zip(optimizer_before[key], optimizer_after[key]):
+            np.testing.assert_array_equal(left, right)
+
+
+@pytest.mark.parametrize(
+    "bad_value,error",
+    [
+        (np.asarray([np.nan], dtype=np.float32), ValueError),
+        (np.asarray([1], dtype=np.int64), TypeError),
+    ],
+)
+def test_optimizer_tensor_dtype_and_finite_values_are_validated(bad_value, error):
+    policy, _ = _ready_policy()
+    trainer = _trainer(policy)
+    state = trainer.optimizer_state()
+    state["values"][0] = np.broadcast_to(
+        bad_value, tuple(state["param_shapes"][0])
+    ).copy()
+    with pytest.raises(error, match=r"values\[0\]"):
+        trainer.load_optimizer_state(state)
+
+
+def test_optimizer_state_rejects_live_hyperparameter_mutation():
+    policy, _ = _ready_policy()
+    trainer = _trainer(policy)
+    trainer.optimizer.eps = 0.5
+    with pytest.raises(RuntimeError, match="hyperparameters no longer match"):
+        trainer.optimizer_state()
 
 
 def test_optimizer_state_captures_adamw_moments():
