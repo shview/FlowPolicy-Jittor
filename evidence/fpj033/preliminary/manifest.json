@@ -10,10 +10,11 @@
   "files_sha256": {
     "dataset_fingerprint.json": "ec1142df8a2ebff890687fd1987295bb0c84a8f4b0b339d2f7c8ce5e84ec5cbe",
     "expert_probe.json": "86c8ea0b3a602e6b65cc30df5df0a30b1ac287f280eac5ec2f97fbdce775b182",
+    "fresh_clone.json": "13dc77ea10856cc628e40753e82abcd0d73f69d898075c83aad0cf028c1c2be2",
     "local_rollout.json": "d65d630b8c31fe1c23bdb52d4c2eeec1d8d72f6dc44492817958f961158253a0",
     "local_train_summary.json": "ad27cd3835135ec8659a318ab754f0b4df16740b8c1e827aeb0fbfdeea29b444"
   },
-  "git_commit_at_generation": "d74a0c93af3550703926669963c4db44011e4a52",
+  "git_commit_at_generation": "021e9eb43225e683270ae393898067f7d317e5c9",
   "schema_version": 1,
   "task": "reach-wall-v3"
 }

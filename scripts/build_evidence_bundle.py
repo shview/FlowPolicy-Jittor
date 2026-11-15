@@ -9,7 +9,7 @@ import json
 import re
 import subprocess
 from pathlib import Path
-from typing import Any, Dict, Iterable
+from typing import Any, Dict, Iterable, Optional
 
 
 PRIVATE_PATTERNS = (
@@ -83,6 +83,7 @@ def build_bundle(
     fingerprint_path: Path,
     train_path: Path,
     rollout_path: Path,
+    fresh_clone_path: Optional[Path] = None,
     out_dir: Path,
     overwrite: bool,
 ) -> Dict[str, Any]:
@@ -95,6 +96,8 @@ def build_bundle(
         "local_train_summary.json": sanitize_train_summary(_load(train_path)),
         "local_rollout.json": sanitize_rollout(_load(rollout_path)),
     }
+    if fresh_clone_path is not None:
+        payloads["fresh_clone.json"] = _load(fresh_clone_path)
     for value in payloads.values():
         assert_public_safe(value)
     hashes = {name: _write(out_dir / name, value) for name, value in payloads.items()}
@@ -125,6 +128,7 @@ def main(argv: Iterable[str] | None = None) -> int:
     parser.add_argument("--fingerprint", type=Path, required=True)
     parser.add_argument("--train-summary", type=Path, required=True)
     parser.add_argument("--rollout", type=Path, required=True)
+    parser.add_argument("--fresh-clone", type=Path, default=None)
     parser.add_argument("--out", type=Path, required=True)
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args(list(argv) if argv is not None else None)
@@ -134,6 +138,7 @@ def main(argv: Iterable[str] | None = None) -> int:
             fingerprint_path=args.fingerprint,
             train_path=args.train_summary,
             rollout_path=args.rollout,
+            fresh_clone_path=args.fresh_clone,
             out_dir=args.out,
             overwrite=args.overwrite,
         )
