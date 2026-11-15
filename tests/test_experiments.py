@@ -19,8 +19,9 @@ if str(REPO_ROOT / "scripts") not in sys.path:
 import experiments  # noqa: E402
 
 
-def _cell(task, seed, rate, *, status="ok", reasons=None):
+def _cell(task, seed, rate, *, status="ok", reasons=None, target_mode="code"):
     return {
+        "target_mode": target_mode,
         "task": task,
         "seed": seed,
         "status": status,
@@ -32,7 +33,21 @@ def _cell(task, seed, rate, *, status="ok", reasons=None):
         "latency_ms_mean": 2.9,
         "nfe": 1,
         "num_points": 1024,
+        "action_slice_mode": "code",
         "checkpoint_reload_max_abs_delta": 0.0,
+        "train": {
+            "seconds_per_step": 0.05,
+            "loss": {"last_epoch_mean": 1e-4, "val": 2e-4},
+            "config": {
+                "data_sha256": "data-hash",
+                "seed": seed,
+                "target_mode": target_mode,
+                "ema_decay": 0.999,
+            },
+            "data_sha256": "data-hash",
+            "train_windows": 100,
+            "total_steps": 30,
+        },
     }
 
 
@@ -73,12 +88,13 @@ def test_failed_cells_are_excluded_from_the_rate_but_stay_in_the_report():
 def test_markdown_keeps_the_disclaimers_and_every_cell():
     args = argparse.Namespace(
         tasks=["reach-v3"], seeds=[0, 1], episodes=20, epochs=30,
-        batch_size=32, down_dims=[32, 64], max_steps=200,
+        batch_size=32, down_dims=[32, 64], max_steps=200, device="cpu",
     )
     report = experiments._aggregate([_cell("reach-v3", 0, 0.1), _cell("reach-v3", 1, 0.0)])
+    report["preflight"] = {"shared_config_sha256": "abc"}
     text = experiments._markdown(report, args)
-    assert "| reach-v3 | 2/2 | 5.00% ± 7.07% |" in text
-    assert "seed" in text and "| 0 | ok | 2/20 |" in text
+    assert "| code | reach-v3 | 2/2 | 5.00% ± 7.07% |" in text
+    assert "seed" in text and "| code | reach-v3 | 0 | ok | 2/20 |" in text
     assert "## What this does not mean" in text
     assert "CPU only" in text and "not the paper's recipe" in text
 
@@ -110,8 +126,8 @@ def test_report_records_the_prohibited_claims(tmp_path, monkeypatch):
     store = tmp_path / "reach-v3.zarr"
     store.mkdir()
 
-    def fake_run_cell(args, task, seed):
-        return _cell(task, seed, 0.25)
+    def fake_run_cell(args, target_mode, task, seed):
+        return _cell(task, seed, 0.25, target_mode=target_mode)
 
     monkeypatch.setattr(experiments, "run_cell", fake_run_cell)
     out = tmp_path / "experiments"
@@ -145,7 +161,70 @@ def test_training_command_enables_periodic_checkpoints(tmp_path):
         device="cuda",
         run_label="full-channel-limited-budget",
         checkpoint_every=5,
+        ema_decay=0.999,
+        ema_warmup_steps=10,
+        overwrite=False,
     )
-    command = experiments.train_command(args, "reach-wall-v3", 0, tmp_path / "run")
+    resume = tmp_path / "epoch-0005.ckpt"
+    command = experiments.train_command(
+        args,
+        "reach-wall-v3",
+        0,
+        tmp_path / "run",
+        target_mode="detached",
+        resume_checkpoint=resume,
+    )
     position = command.index("--checkpoint-every")
     assert command[position + 1] == "5"
+    assert command[command.index("--target-mode") + 1] == "detached"
+    assert command[command.index("--ema-decay") + 1] == "0.999"
+    assert command[command.index("--ema-warmup-steps") + 1] == "10"
+    assert command[command.index("--resume") + 1] == str(resume)
+
+
+def test_matched_validation_requires_only_target_mode_to_differ():
+    cells = []
+    for mode, rate in (("code", 0.2), ("detached", 0.3)):
+        cells.append(_cell("reach-wall-v3", 0, rate, target_mode=mode))
+    result = experiments._matched_validation(cells, ["code", "detached"])
+    assert result["passed"] is True
+    details = result["pairs"][0]["checks"]["code_vs_detached"]["details"]
+    assert all(details.values())
+
+    cells[1]["train"]["config"]["seed"] = 99
+    result = experiments._matched_validation(cells, ["code", "detached"])
+    assert result["passed"] is False
+    assert (
+        result["pairs"][0]["checks"]["code_vs_detached"]["details"]
+        ["training_config_except_target_equal"]
+        is False
+    )
+
+
+def test_comparison_main_records_shared_preflight_and_both_arms(tmp_path, monkeypatch):
+    store = tmp_path / "reach-wall-v3.zarr"
+    store.mkdir()
+    (store / "metadata").write_bytes(b"same-data")
+
+    def fake_run_cell(args, target_mode, task, seed):
+        return _cell(task, seed, 0.25, target_mode=target_mode)
+
+    monkeypatch.setattr(experiments, "run_cell", fake_run_cell)
+    out = tmp_path / "comparison"
+    code = experiments.main(
+        [
+            "--tasks", "reach-wall-v3",
+            "--seeds", "0", "1", "2",
+            "--target-modes", "code", "detached",
+            "--ema-decay", "0.999",
+            "--out", str(out),
+            "--data-dir", str(tmp_path),
+        ]
+    )
+    assert code == 0
+    report = json.loads((out / "experiments.json").read_text(encoding="utf-8"))
+    assert report["target_modes"] == ["code", "detached"]
+    assert report["preflight"]["passed"] is True
+    assert report["matched_validation"]["passed"] is True
+    assert len(report["cells"]) == 6
+    assert set(report["targets"]) == {"code", "detached"}

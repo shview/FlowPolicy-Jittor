@@ -27,20 +27,20 @@ environment:
 
 baseline:
   command: "wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q"
-  result: "246 passed, 1 skipped"
+  result: "249 passed, 1 skipped"
   skipped:
     - test: "tests/test_conv1d_parity.py"
       reason: "The core Jittor environment does not install PyTorch; conv1d/Autograd parity is now also measured end to end by scripts/parity_check.py in the separate parity-env."
-  note: "FPJ-034 used the user-requested single final full run: 246 passed, 1 skipped, 48 warnings in 193.76s. Do not count the skipped PyTorch parity module as passed. Detached target, atomic trainer resume, immutable data/config provenance and the AP-discovered counter/history/stored-EMA cases are included."
+  note: "FPJ-035 final corrected run: 249 passed, 1 skipped, 48 warnings in 228.00s. The first full attempt exposed two test-fixture KeyErrors (247 passed); validation was hardened to fail closed on missing rollout protocol fields, then the single necessary full rerun passed. The torch-absent parity skip is not counted."
 
 current:
-  task_id: FPJ-035
-  title: "Released-code versus detached EMA target comparison"
+  task_id: FPJ-036
+  title: "A10 full-channel paired target validation"
   attempt: 1
   stage: implementation
   status: ready
   owner: null
-  last_handoff_id: FPJ034-GATE-01
+  last_handoff_id: FPJ035-GATE-01
   next_stage: verification
   role_handoffs:
     implementation: null
@@ -49,9 +49,10 @@ current:
     quality: null
     gate: null
   objective: >-
-    Compare released-code and detached-EMA target semantics under an exactly matched local CPU
-    dataset, model, seed and update budget. Report training loss, stability, resource cost and
-    closed-loop outcomes before deciding whether a later cloud/full-channel comparison is useful.
+    Use the authorized Alibaba Cloud PAI-DSW A10 instance to compare released-code and detached-EMA
+    target semantics for one exactly matched full-channel seed. Record CUDA feasibility, training
+    and memory cost, losses and all closed-loop outcomes, then stop the instance before deciding
+    whether a three-seed cloud extension is justified.
   scope:
     allowed_paths:
       - README.md
@@ -59,8 +60,8 @@ current:
       - scripts/**
       - src/**
       - tests/**
-      - outputs/fpj035/**
-      - evidence/fpj035/**
+      - outputs/fpj036/**
+      - evidence/fpj036/**
       - .agents/STATE.yaml
       - .agents/HANDOFFS.md
       - .agents/QUEUE.md
@@ -71,31 +72,32 @@ current:
       - data/reach-wall-v3.zarr/**
       - evidence/fpj033/**
       - evidence/fpj034/**
+      - evidence/fpj035/**
   acceptance:
-    - "The experiment CLI passes target_mode and EMA settings through training, resume, rollout and summaries while target_mode='code' remains the default."
-    - "A preflight proves both arms use the same dataset hash, task, seeds, points, model, optimizer schedule, batch size, epoch/update budget and rollout protocol; only target semantics differ."
-    - "Run the matched small-channel CPU comparison for seeds 0, 1 and 2, recording train/validation losses, wall time, per-step time, target/resource metadata and every rollout outcome."
-    - "Report aggregate mean and sample standard deviation for both arms without selecting only the best seed, and disclose failures/variance."
-    - "Publish a compact evidence/fpj035 bundle with commands, config/data hashes and aggregate/per-seed records, excluding datasets and checkpoints."
-    - "Documentation explains what the comparison can and cannot establish; no cloud/full-channel or paper-success claim is made without separate authorization and evidence."
-    - "Run one final exact pytest suite at completion, following the user's single-check instruction, and report skipped tests separately."
+    - "FPJ-035 source, local evidence and the 249-pass baseline are committed and pushed before the cloud checkout is updated."
+    - "Record the DSW instance state and remaining free quota before start; use the existing A10 public-resource instance and do not create a paid resource."
+    - "Pull the exact publication commit, verify Jittor CUDA and EGL, and prove the cloud reach-wall-v3 data hash matches the declared dataset before training."
+    - "Run code and detached arms for seed 0 with identical 512/1024/2048 channels, 1024 points, batch 64, 30 epochs, EMA 0.999 and 20 rollout episodes; only target semantics/role may differ."
+    - "Record train/validation losses, wall and per-step time, sampled peak GPU memory, checkpoint/config/data hashes, latency and every rollout outcome for both arms."
+    - "Publish a compact evidence/fpj036 bundle without raw datasets, checkpoints, private paths or credentials, and state that one seed is feasibility evidence rather than a mean."
+    - "Stop the cloud instance after evidence is copied and confirm its stopped state; do not extend to three cloud seeds without a new cost/result decision."
   required_commands:
     - >-
       wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python
       -m pytest -q
 
 known_gaps:
-  - "FPJ-034 proves detached target mechanics and small-CPU overhead, not whether it improves closed-loop success."
-  - "The current experiment grid does not yet pass target mode/EMA settings through every cell and rollout summary."
+  - "FPJ-035 found detached worse under 710-update small-channel CPU training; it does not predict full-channel A10 behavior."
+  - "The prior FPJ-033 A10 code arm lacks explicit current target/EMA provenance, so both FPJ-036 arms must be rerun rather than spliced."
   - "Long-process CPU resume is state-correct but not universally bit-exact; FPJ-031's measured 1e-2 tolerance remains unless new evidence narrows it."
-  - "Local WSL CUDA remains unavailable and the Alibaba Cloud DSW instance is stopped; FPJ-035 does not authorize cloud restart or spend."
-  - "Published FPJ-032/033/034 evidence and all recorded datasets/checkpoints must remain unchanged."
+  - "Local WSL CUDA remains unavailable. The user explicitly authorized cloud validation after local completion; the DSW instance is currently stopped and must be stopped again after evidence capture."
+  - "Published FPJ-032/033/034/035 evidence and all recorded datasets/checkpoints must remain unchanged."
   - "Evidence-bundle sanitizer/atomicity/schema and experiment --reuse provenance have nonblocking P2 debt from FPJ-033; they are outside FPJ-034 unless separately queued."
 
 prohibited_claims:
-  - "detached target improves success before the matched comparison is complete"
+  - "one cloud seed establishes a mean or sample standard deviation"
   - "paper success rate or full paper recipe reproduced"
-  - "small-channel CPU target comparison predicts full-channel A10 behavior"
-  - "full-channel target comparison completed"
-  - "cloud CUDA result produced by FPJ-035"
+  - "the local target ordering must hold on full-channel A10 before the paired run completes"
+  - "three-seed full-channel target comparison completed"
+  - "cloud result produced before evidence and instance-stop confirmation"
   - "bit-exact save/resume in every process history"

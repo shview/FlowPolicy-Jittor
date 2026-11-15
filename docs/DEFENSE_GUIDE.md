@@ -118,6 +118,17 @@ L = mean(||f_t-f_r||²) + α mean(mask · ||v_t-v_r||²)
 表格标题和口头表述都应带上“CPU、小通道、10 epochs、替代仿真栈、NFE=1”。这两项数据用于证明
 Jittor 闭环可运行和任务难度差异，不能与论文成功率直接比较。
 
+**相同预算 target 消融（CPU、小通道、`reach-wall-v3`）**
+
+| target | 成功率 | 验证 loss | 训练秒/步 |
+|---|---:|---:|---:|
+| released-code + stored EMA | 51.67% ± 5.77% | 1.19e-5 ± 5.48e-6 | 0.723 ± 0.009 |
+| detached EMA loss target | 16.67% ± 15.28% | 2.38e-5 ± 1.04e-6 | 0.884 ± 0.016 |
+
+答辩时不要说“论文方法不如公开代码”。准确说法是：在完全匹配的 710-update 小通道短预算下，
+detached target 改变了优化动态，三个 seed 都未超过 code，对应更高验证 loss 和约 22.3% 的训练
+时间开销；这支持“短预算不适合直接套用该 target”，但不能外推 3000 epochs 或完整通道 GPU。
+
 **A10 论文结构有限预算结果**
 
 | 任务 | 评测设置 | 成功率 | 平均策略延迟 | 峰值显存 |
@@ -140,6 +151,9 @@ Jittor 闭环可运行和任务难度差异，不能与论文成功率直接比�
   带配置指纹的 checkpoint、trainer checkpoint（AdamW 矩 + EMA）；
 - EMA：`EmaModel` 是 code 模式下存储但不参与 loss 的影子；`DetachedEmaTarget` 才是 loss 读取的独立
   target policy，两者都检查 checkpoint 模式，不允许静默互换（D018、D021）；
+- target 消融：`reach-wall-v3` 小通道 CPU 下，两组各 3 seeds × 20 episodes，code 为
+  51.67% ± 5.77%，detached 为 16.67% ± 15.28%；`evidence/fpj035/` 保留 120 个逐回合结果与
+  三组逐 seed 匹配检查（D022）；
 - 跨框架 parity：独立 PyTorch 镜像对 action_pred / loss / 168 个梯度做对照，
   170 项检查、最差偏差 1.6e-09（`outputs/parity/parity.json`）；
 - 全通道（512/1024/2048）CPU 单步前反向：2.55 亿参数、约 4 s/step、峰值 4.5 GB；
@@ -156,9 +170,10 @@ Jittor 闭环可运行和任务难度差异，不能与论文成功率直接比�
 - **本机 CUDA 仍未配置，但云端 A10 已验证**：本机 RTX 5060 缺少适配 Blackwell 的 toolkit；
   云端 A10 使用 CUDA 12.1。CPU 实验表仍然是 CPU 结果，不能因为云端可用就改写其来源；
 - **已发布的完整通道 GPU 结果仍是 released-code target**：每个任务只有 30 epochs，未跑论文
-  3000 epochs；新增 detached 模式没有回写或改变这 120 个 episode 的实验口径；
+  3000 epochs；本地 target 消融没有回写或改变这 120 个 GPU episode 的实验口径；
 - **EMA 需要区分用途**：默认 loss 的 `v_r` 仍由当前模型给出；只有显式
-  `target_mode="detached"` 且配置 `ema_decay` 时，独立 target 才参与 loss。目前尚无正式成功率对照；
+  `target_mode="detached"` 且配置 `ema_decay` 时，独立 target 才参与 loss。已完成的小通道同预算对照
+  只说明短预算下 detached 更差，不是对论文完整配方的否定；
 - parity 只覆盖小配置模型，不是论文规模；
 - 仿真栈是替代实现（D016），成功率不能与论文数字直接比较；
 - 示范数量少（10/20 条）；CPU 小通道结果与 A10 完整通道结果预算不同，不能直接归因于框架或只比较百分比。

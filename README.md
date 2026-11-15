@@ -96,6 +96,8 @@ python scripts/rollout.py --data data/reach-wall-v3.zarr \
 - [x] A10 论文结构有限预算实验：完整通道、3 seeds、每 seed 30 epochs + 20 个闭环 episode，配置、哈希和逐回合结果均已保存。
 - [x] `reach-wall-v3` 本地门槛：10/10 专家变体合格；20 条正式示范可确定性重录；真实数据的计划停止/恢复训练和 5-episode 闭环 smoke 已通过。
 - [x] `reach-wall-v3` A10 正式有限预算实验：完整通道、3 seeds × 20 episodes，公开脱敏证据包含训练曲线、哈希和全部逐回合记录。
+- [x] `reach-wall-v3` 小通道 CPU target 对照：released-code 与 detached EMA 使用完全匹配的
+      数据、模型、seeds、710 次更新和 3 × 20 episodes，逐 seed 匹配检查与 120 个回合均已留证。
 
 ### A10 论文结构有限预算结果（NFE=1）
 
@@ -121,9 +123,24 @@ python scripts/rollout.py --data data/reach-wall-v3.zarr \
 仿真栈是文档化的替代实现（D016）。云端 CUDA 已验证，但没有用来重新跑这张 CPU 实验表；逐 episode 明细与失败类型见
 `outputs/experiments/SUMMARY.md`。
 
-当前已经完成 CPU 闭环证据链、A10 CUDA 可行性验证，以及两个任务的完整 512/1024/2048 通道三 seed
-有限预算训练（共 120 个闭环 episode）。detached EMA target 已作为独立训练模式接入，但尚未与
-released-code target 做相同预算的正式成功率对照。论文 3000 epochs 配方、原版旧仿真栈逐项对齐和
+### 相同预算 target 语义对照（CPU、小通道、10 epochs）
+
+| target | 成功率（3 seeds 均值 ± 样本标准差） | 验证 loss | 训练秒/步 |
+| --- | --- | --- | --- |
+| released-code + stored EMA | **51.67% ± 5.77%**（9/20、11/20、11/20） | `1.19e-5 ± 5.48e-6` | `0.723 ± 0.009` |
+| detached EMA loss target | **16.67% ± 15.28%**（6/20、4/20、0/20） | `2.38e-5 ± 1.04e-6` | `0.884 ± 0.016` |
+
+两组都使用同一 `reach-wall-v3` 数据 SHA256、seeds 0/1/2、1024 点、小通道模型、batch 32、
+10 epochs（每 seed 710 次更新）、EMA 0.999 和每 seed 20 个闭环 episode；自动检查逐 seed 确认除了
+target 语义/角色外训练配置一致。当前短预算下 detached 成功率低 35 个百分点，训练每步约慢 22.3%，
+验证 loss 约为 code 的 2 倍。这说明“实现论文式 target”不等于在任何预算下都会更好；更合理的解释是
+独立 target 改变了优化动态，而 710 次更新可能不足以发挥它的作用。该结论只适用于本次小通道 CPU
+设置，不能外推完整通道或论文 3000 epochs。公开脱敏记录见
+[`evidence/fpj035/manifest.json`](evidence/fpj035/manifest.json)（D022）。
+
+当前已经完成 CPU 闭环证据链、A10 CUDA 可行性验证、两个任务的完整 512/1024/2048 通道三 seed
+有限预算训练，以及 released-code/detached target 的小通道同预算三 seed 对照。论文 3000 epochs
+配方、detached 的完整通道云端对照、原版旧仿真栈逐项对齐和
 成功/失败视频也尚未完成。代码已发布到
 <https://github.com/shview/FlowPolicy-Jittor>；这不改变实验边界，仍不能写成“论文成功率已复现”。
 
@@ -146,8 +163,9 @@ A10 三 seed 正式有限预算结果见 [FPJ-033 formal bundle](evidence/fpj033
 小 CPU 配置的资源探测命令为 `python scripts/detached_target_probe.py`；记录见
 [`evidence/fpj034/resource_probe.json`](evidence/fpj034/resource_probe.json)。本次 10.3 万在线参数配置中，
 detached 构造阶段 RSS 比无 EMA code 模式多 3.75 MiB；JIT warm-up 后五步中位数为 53.9 ms 对 59.0 ms，
-没有测到减速（detached 分支无需为 `v_r` 保存反向图）。这个短小 CPU 测量噪声较大，只用于确认实现
-成本，不能外推完整通道显存或成功率；正式 target 对照属于下一阶段。
+没有测到减速（detached 分支无需为 `v_r` 保存反向图）。这个短小 CPU 探针只用于确认实现成本；正式
+真实数据对照则测到 detached 为 `0.884 ± 0.016 s/step`，code 为 `0.723 ± 0.009 s/step`。二者测量
+对象不同，不矛盾，也都不能直接外推完整通道 GPU 成本。
 
 后续训练器构造 Jittor AdamW 时必须使用 `policy.trainable_parameters()`，不能直接传 `policy.parameters()`；后者仍包含为上游 state 结构保留、但已冻结的 `var_est` 参数与 normalizer buffers。
 

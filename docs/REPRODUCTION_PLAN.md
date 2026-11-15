@@ -238,8 +238,11 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
 - 上游 PyTorch FlowPolicy：同一示范、同一任务、尽量相同配置。
 - Jittor FlowPolicy：正式结果。
 - 可选消融：统一 1024 点 vs. 官方 runner 的 512 点。
-- 下一项消融：在完全相同的数据、seed、点数和训练预算下，对比公开代码的同网络 target 与
-  detached EMA/stop-gradient target；FPJ-034 只完成实现、恢复语义和小 CPU 资源测量。
+- [x] target 消融：在完全相同的 `reach-wall-v3` 数据、seeds 0/1/2、1024 点、小通道模型、batch 32、
+  10 epochs（710 updates/seed）和 20 episodes/seed 下，对比 released-code + stored EMA 与 detached
+  EMA loss target。结果为 51.67% ± 5.77% 对 16.67% ± 15.28%；逐 seed 匹配检查全部通过。
+- 下一步：按用户授权在 A10 上先做完整通道单 seed 配对预检，记录显存、训练耗时和闭环结果；本地
+  结果不能预言完整通道 GPU 结论。
 
 ### 验证清单
 
@@ -252,6 +255,8 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
       峰值显存与策略延迟；证据目录含逐回合 JSON。
 - [x] 第二个完整通道任务 `reach-wall-v3` 按匹配预算完成 3 seeds × 20 episodes；公开脱敏包保留全部
       逐 episode 记录、训练曲线和哈希，不包含数据集、checkpoint、私有路径或密钥。
+- [x] target 对照完成 2 modes × 3 seeds × 20 episodes；`evidence/fpj035/` 保留共享配置哈希、逐 seed
+      训练/验证/资源指标、匹配校验和全部 120 个 episode，不包含原始输出或 checkpoint。
 
 ### 防止走偏
 

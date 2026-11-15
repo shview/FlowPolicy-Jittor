@@ -1,0 +1,27 @@
+{
+  "claim_boundary": "This bundle compares target semantics with matched small-channel CPU settings. It does not establish full-channel GPU behavior or reproduce paper success rates.",
+  "excluded": [
+    "raw Zarr demonstrations",
+    "policy/trainer checkpoints",
+    "subprocess logs and absolute paths",
+    "credentials and secrets"
+  ],
+  "files_sha256": {
+    "SUMMARY.md": "587c42196834b055ac193a9dbdbd48b15053637c8b4e84175e54e2fada6c63b2",
+    "comparison.json": "5be5db23c00e11064bb0716273e078cfbc66d2cb678344a6b689440f6581926d"
+  },
+  "git_commit_at_generation": "0f329e19c04e68246bcd751beb03276ee9954afe",
+  "schema_version": 1,
+  "source_files_sha256": {
+    "SUMMARY.md": "587c42196834b055ac193a9dbdbd48b15053637c8b4e84175e54e2fada6c63b2",
+    "experiments.json": "48ec425cfb6c573d1e9713d7ec37b899fcdf9ed1beb220879f7f8cec722fe97c",
+    "preflight.json": "8174d7fb0c9f116d498d76b8e0da5d6191c46ac16367dec1618418dc8d7896f1"
+  },
+  "target_modes": [
+    "code",
+    "detached"
+  ],
+  "task": [
+    "reach-wall-v3"
+  ]
+}

@@ -1,0 +1,2382 @@
+{
+  "cells": [
+    {
+      "action_slice_mode": "code",
+      "checkpoint_reload_max_abs_delta": 0.0,
+      "done_reasons": {
+        "step_cap": 20
+      },
+      "episode_count": 20,
+      "episode_outcomes": [
+        {
+          "done_reason": "step_cap",
+          "episode": 0,
+          "policy_latency_ms": {
+            "mean": 3.1379835817827355,
+            "p95": 3.6058548954315484
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 1,
+          "policy_latency_ms": {
+            "mean": 3.0804595209783248,
+            "p95": 3.720010993129108
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 2,
+          "policy_latency_ms": {
+            "mean": 2.9778010589800386,
+            "p95": 3.6083497063373215
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 88
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 3,
+          "policy_latency_ms": {
+            "mean": 3.0823501807362983,
+            "p95": 3.855163705884479
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 4,
+          "policy_latency_ms": {
+            "mean": 3.1616441200056404,
+            "p95": 3.556935500819236
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 5,
+          "policy_latency_ms": {
+            "mean": 3.113958283732367,
+            "p95": 3.6893631971906866
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 6,
+          "policy_latency_ms": {
+            "mean": 3.1376159402416715,
+            "p95": 3.6473851010669023
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 131
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 7,
+          "policy_latency_ms": {
+            "mean": 3.066037820631277,
+            "p95": 3.56354380492121
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 8,
+          "policy_latency_ms": {
+            "mean": 2.9632623868633003,
+            "p95": 3.5691329016117375
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 119
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 9,
+          "policy_latency_ms": {
+            "mean": 2.930331343190689,
+            "p95": 3.520719798689242
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 106
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 10,
+          "policy_latency_ms": {
+            "mean": 2.944826477714606,
+            "p95": 3.7740965010016225
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 23
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 11,
+          "policy_latency_ms": {
+            "mean": 2.9875020593849584,
+            "p95": 3.6557401093887165
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 88
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 12,
+          "policy_latency_ms": {
+            "mean": 3.0228917468721463,
+            "p95": 3.5723168999538757
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 152
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 13,
+          "policy_latency_ms": {
+            "mean": 3.1657688506034467,
+            "p95": 3.6370806948980317
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 14,
+          "policy_latency_ms": {
+            "mean": 3.1122172537169406,
+            "p95": 3.69678550196113
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 15,
+          "policy_latency_ms": {
+            "mean": 3.0971382383635935,
+            "p95": 3.599241298798006
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 16,
+          "policy_latency_ms": {
+            "mean": 2.839241581690956,
+            "p95": 3.704621306678746
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 17,
+          "policy_latency_ms": {
+            "mean": 3.0289751192148247,
+            "p95": 3.685096505796537
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 157
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 18,
+          "policy_latency_ms": {
+            "mean": 2.9933193143380725,
+            "p95": 3.671455795119982
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 19,
+          "policy_latency_ms": {
+            "mean": 2.886720746668723,
+            "p95": 3.684277503634803
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 94
+        }
+      ],
+      "latency_ms_mean": 3.0365022812855305,
+      "nfe": 1,
+      "num_points": 1024,
+      "rollout_process": {
+        "exit_code": 0,
+        "reused": false,
+        "seconds": 882.3234231469978
+      },
+      "seed": 0,
+      "status": "ok",
+      "success_episodes": 9,
+      "success_rate": 0.45,
+      "success_step_counts": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "success_steps": [
+        0,
+        0,
+        88,
+        0,
+        0,
+        0,
+        131,
+        0,
+        119,
+        106,
+        23,
+        88,
+        152,
+        0,
+        0,
+        0,
+        0,
+        157,
+        0,
+        94
+      ],
+      "target_mode": "code",
+      "task": "reach-wall-v3",
+      "total_steps": 4000,
+      "train": {
+        "checkpoint_sha256": "89f4ce179678398fea239634b7d05ba93a75abae7671a1b2a0a20876db87bce3",
+        "config": {
+          "action_slice_mode": "code",
+          "batch_size": 32,
+          "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+          "device": "cpu",
+          "down_dims": [
+            32,
+            64
+          ],
+          "ema_decay": 0.999,
+          "ema_warmup_steps": 0,
+          "embed_dim": 32,
+          "encoder_out": 64,
+          "epochs": 10,
+          "horizon": 4,
+          "kernel_size": 3,
+          "lr": 0.001,
+          "min_lr_ratio": 0.05,
+          "n_action_steps": 4,
+          "n_groups": 8,
+          "n_obs_steps": 2,
+          "num_points": 1024,
+          "pointnet_out": 64,
+          "seed": 0,
+          "steps_per_epoch": 71,
+          "target_mode": "code",
+          "total_steps": 710,
+          "val_ratio": 0.02,
+          "var_fc_hidden_dim": 64,
+          "warmup": 20
+        },
+        "config_sha256": "8d6de6f8992b9a94566d1170d6c1418f78c95c1645ff49a7624fa20ae7fda68c",
+        "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+        "ema": {
+          "decay": 0.999,
+          "effective_decay": 0.9875,
+          "enabled": true,
+          "note": "EMA weights are stored in the trainer checkpoint but the released-code loss still uses the online policy for v_r.",
+          "optimization_step": 710,
+          "role": "stored_shadow_not_used_by_loss",
+          "warmup_steps": 0
+        },
+        "exit_code": 0,
+        "loss": {
+          "first": 0.00015969872765708715,
+          "last_epoch_mean": 1.3200336544402271e-05,
+          "min": 4.87952638650313e-06,
+          "val": 1.0759013093775138e-05
+        },
+        "resume": {
+          "checkpoint_every": 5,
+          "claim_boundary": "State and schedule restore exactly; prior measurements allow up to 1e-2 long-process parameter drift, so bit-exact resume is not claimed.",
+          "resumed": false,
+          "start_epoch": 0
+        },
+        "reused": false,
+        "runtime": {
+          "cpu_count": 24,
+          "device": "cpu",
+          "jittor": "1.3.11.0",
+          "omp_num_threads": "4",
+          "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+          "python": "3.10.14"
+        },
+        "seconds": 514.0243693429948,
+        "seconds_per_step": 0.718649805894365,
+        "steps_per_epoch": 71,
+        "total_steps": 710,
+        "train_windows": 2299,
+        "trainable_parameters": 436676,
+        "trainer_checkpoint_sha256": "f88f1c569bb75fed712ef87eb27d53377f62cca02fc655f9d506d6b383cd67cf",
+        "val_windows": 121,
+        "wall_seconds": 510.24136218499916
+      },
+      "wall_seconds": 874.9008487719984
+    },
+    {
+      "action_slice_mode": "code",
+      "checkpoint_reload_max_abs_delta": 0.0,
+      "done_reasons": {
+        "step_cap": 20
+      },
+      "episode_count": 20,
+      "episode_outcomes": [
+        {
+          "done_reason": "step_cap",
+          "episode": 0,
+          "policy_latency_ms": {
+            "mean": 3.0075955372338474,
+            "p95": 3.900715496274642
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 41
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 1,
+          "policy_latency_ms": {
+            "mean": 2.8135014031996337,
+            "p95": 3.755263304628897
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 2,
+          "policy_latency_ms": {
+            "mean": 2.9193135519223565,
+            "p95": 3.5694297097506933
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 22
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 3,
+          "policy_latency_ms": {
+            "mean": 2.994440836091734,
+            "p95": 3.8284122027107506
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 58
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 4,
+          "policy_latency_ms": {
+            "mean": 2.741489776170382,
+            "p95": 3.5233527960372157
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 5,
+          "policy_latency_ms": {
+            "mean": 2.6913944179185236,
+            "p95": 3.4651439971639775
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 37
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 6,
+          "policy_latency_ms": {
+            "mean": 2.935550835656016,
+            "p95": 3.968791301304009
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 5
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 7,
+          "policy_latency_ms": {
+            "mean": 2.8041510157714558,
+            "p95": 3.5874568027793425
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 72
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 8,
+          "policy_latency_ms": {
+            "mean": 2.852350134583218,
+            "p95": 3.7176993035245682
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 18
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 9,
+          "policy_latency_ms": {
+            "mean": 2.7899949549898895,
+            "p95": 3.5296043046400882
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 10,
+          "policy_latency_ms": {
+            "mean": 2.7984122078042173,
+            "p95": 3.489089601498563
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 11,
+          "policy_latency_ms": {
+            "mean": 2.961901388150195,
+            "p95": 3.917348796676378
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 12,
+          "policy_latency_ms": {
+            "mean": 3.0025886265307307,
+            "p95": 3.6041472034412436
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 138
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 13,
+          "policy_latency_ms": {
+            "mean": 2.914995953498005,
+            "p95": 3.5584173048846424
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 14,
+          "policy_latency_ms": {
+            "mean": 2.7832285068414886,
+            "p95": 3.854606804088689
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 71
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 15,
+          "policy_latency_ms": {
+            "mean": 2.0972958202525946,
+            "p95": 4.017600999213755
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 37
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 16,
+          "policy_latency_ms": {
+            "mean": 2.6076449706382467,
+            "p95": 4.0625153022119775
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 1
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 17,
+          "policy_latency_ms": {
+            "mean": 3.024844402567233,
+            "p95": 3.8411910965805873
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 18,
+          "policy_latency_ms": {
+            "mean": 2.943403104497398,
+            "p95": 4.246701400552411
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 19,
+          "policy_latency_ms": {
+            "mean": 2.8665673435985375,
+            "p95": 3.6690340042696334
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        }
+      ],
+      "latency_ms_mean": 2.827533239395785,
+      "nfe": 1,
+      "num_points": 1024,
+      "rollout_process": {
+        "exit_code": 0,
+        "reused": false,
+        "seconds": 849.6911765130062
+      },
+      "seed": 1,
+      "status": "ok",
+      "success_episodes": 11,
+      "success_rate": 0.55,
+      "success_step_counts": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "success_steps": [
+        41,
+        0,
+        22,
+        58,
+        0,
+        37,
+        5,
+        72,
+        18,
+        0,
+        0,
+        0,
+        138,
+        0,
+        71,
+        37,
+        1,
+        0,
+        0,
+        0
+      ],
+      "target_mode": "code",
+      "task": "reach-wall-v3",
+      "total_steps": 4000,
+      "train": {
+        "checkpoint_sha256": "88f54b4bcbed0b668580584f7b62e8335bf67eff4010c3441e091ba52fdeff07",
+        "config": {
+          "action_slice_mode": "code",
+          "batch_size": 32,
+          "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+          "device": "cpu",
+          "down_dims": [
+            32,
+            64
+          ],
+          "ema_decay": 0.999,
+          "ema_warmup_steps": 0,
+          "embed_dim": 32,
+          "encoder_out": 64,
+          "epochs": 10,
+          "horizon": 4,
+          "kernel_size": 3,
+          "lr": 0.001,
+          "min_lr_ratio": 0.05,
+          "n_action_steps": 4,
+          "n_groups": 8,
+          "n_obs_steps": 2,
+          "num_points": 1024,
+          "pointnet_out": 64,
+          "seed": 1,
+          "steps_per_epoch": 71,
+          "target_mode": "code",
+          "total_steps": 710,
+          "val_ratio": 0.02,
+          "var_fc_hidden_dim": 64,
+          "warmup": 20
+        },
+        "config_sha256": "51d8caccd1e231b9456930ca74f7d159dc970ad4e5264bf81e7967b261abea03",
+        "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+        "ema": {
+          "decay": 0.999,
+          "effective_decay": 0.9875,
+          "enabled": true,
+          "note": "EMA weights are stored in the trainer checkpoint but the released-code loss still uses the online policy for v_r.",
+          "optimization_step": 710,
+          "role": "stored_shadow_not_used_by_loss",
+          "warmup_steps": 0
+        },
+        "exit_code": 0,
+        "loss": {
+          "first": 0.00014146532339509577,
+          "last_epoch_mean": 1.26605963564095e-05,
+          "min": 4.742145847558277e-06,
+          "val": 7.084089702402707e-06
+        },
+        "resume": {
+          "checkpoint_every": 5,
+          "claim_boundary": "State and schedule restore exactly; prior measurements allow up to 1e-2 long-process parameter drift, so bit-exact resume is not claimed.",
+          "resumed": false,
+          "start_epoch": 0
+        },
+        "reused": false,
+        "runtime": {
+          "cpu_count": 24,
+          "device": "cpu",
+          "jittor": "1.3.11.0",
+          "omp_num_threads": "4",
+          "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+          "python": "3.10.14"
+        },
+        "seconds": 525.2278611280053,
+        "seconds_per_step": 0.7339059429014065,
+        "steps_per_epoch": 71,
+        "total_steps": 710,
+        "train_windows": 2299,
+        "trainable_parameters": 436676,
+        "trainer_checkpoint_sha256": "81a2ad3f132c31a1bb70f54164db451b11f238b033ec281d0cca1637585b3038",
+        "val_windows": 121,
+        "wall_seconds": 521.0732194599987
+      },
+      "wall_seconds": 841.600888179004
+    },
+    {
+      "action_slice_mode": "code",
+      "checkpoint_reload_max_abs_delta": 0.0,
+      "done_reasons": {
+        "step_cap": 20
+      },
+      "episode_count": 20,
+      "episode_outcomes": [
+        {
+          "done_reason": "step_cap",
+          "episode": 0,
+          "policy_latency_ms": {
+            "mean": 2.131775476137496,
+            "p95": 3.5480028964229855
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 5
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 1,
+          "policy_latency_ms": {
+            "mean": 3.0705795973911187,
+            "p95": 3.86365728918463
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 2,
+          "policy_latency_ms": {
+            "mean": 2.8353552968213473,
+            "p95": 3.547012500348501
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 27
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 3,
+          "policy_latency_ms": {
+            "mean": 2.605431269004649,
+            "p95": 3.4723931021289896
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 122
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 4,
+          "policy_latency_ms": {
+            "mean": 2.9054219691593675,
+            "p95": 3.857259097276254
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 5,
+          "policy_latency_ms": {
+            "mean": 2.7910024179632202,
+            "p95": 3.6821511981543154
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 55
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 6,
+          "policy_latency_ms": {
+            "mean": 2.6993061797675995,
+            "p95": 3.6071252034162167
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 7,
+          "policy_latency_ms": {
+            "mean": 2.7484809545410878,
+            "p95": 3.659887496905866
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 18
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 8,
+          "policy_latency_ms": {
+            "mean": 2.9212902819150504,
+            "p95": 3.7610553961712863
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 65
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 9,
+          "policy_latency_ms": {
+            "mean": 2.72328323930495,
+            "p95": 3.7420313004986383
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 53
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 10,
+          "policy_latency_ms": {
+            "mean": 2.8125952543523995,
+            "p95": 3.5900738133932464
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 11,
+          "policy_latency_ms": {
+            "mean": 2.662806194831631,
+            "p95": 4.113889901782386
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 12,
+          "policy_latency_ms": {
+            "mean": 3.054026999717592,
+            "p95": 3.7356290937168524
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 13,
+          "policy_latency_ms": {
+            "mean": 2.9077979693894704,
+            "p95": 3.697036797530018
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 14,
+          "policy_latency_ms": {
+            "mean": 2.795204103866995,
+            "p95": 3.5945638082921505
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 129
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 15,
+          "policy_latency_ms": {
+            "mean": 2.9182481047794666,
+            "p95": 3.7580022006295617
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 16,
+          "policy_latency_ms": {
+            "mean": 3.018743670875651,
+            "p95": 4.4589921933948045
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 2
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 17,
+          "policy_latency_ms": {
+            "mean": 2.8869359857844077,
+            "p95": 3.641983706620522
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 167
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 18,
+          "policy_latency_ms": {
+            "mean": 2.9631487320615117,
+            "p95": 3.696410603879485
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 19,
+          "policy_latency_ms": {
+            "mean": 2.726096283286504,
+            "p95": 3.4510448036598973
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 136
+        }
+      ],
+      "latency_ms_mean": 2.808876499047576,
+      "nfe": 1,
+      "num_points": 1024,
+      "rollout_process": {
+        "exit_code": 0,
+        "reused": false,
+        "seconds": 812.9448051030049
+      },
+      "seed": 2,
+      "status": "ok",
+      "success_episodes": 11,
+      "success_rate": 0.55,
+      "success_step_counts": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "success_steps": [
+        5,
+        0,
+        27,
+        122,
+        0,
+        55,
+        0,
+        18,
+        65,
+        53,
+        0,
+        0,
+        0,
+        0,
+        129,
+        0,
+        2,
+        167,
+        0,
+        136
+      ],
+      "target_mode": "code",
+      "task": "reach-wall-v3",
+      "total_steps": 4000,
+      "train": {
+        "checkpoint_sha256": "5f8a4dcd270966bab7f8278484ed335f2c02b54ab639fa40c3b6f2919c74f0b4",
+        "config": {
+          "action_slice_mode": "code",
+          "batch_size": 32,
+          "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+          "device": "cpu",
+          "down_dims": [
+            32,
+            64
+          ],
+          "ema_decay": 0.999,
+          "ema_warmup_steps": 0,
+          "embed_dim": 32,
+          "encoder_out": 64,
+          "epochs": 10,
+          "horizon": 4,
+          "kernel_size": 3,
+          "lr": 0.001,
+          "min_lr_ratio": 0.05,
+          "n_action_steps": 4,
+          "n_groups": 8,
+          "n_obs_steps": 2,
+          "num_points": 1024,
+          "pointnet_out": 64,
+          "seed": 2,
+          "steps_per_epoch": 71,
+          "target_mode": "code",
+          "total_steps": 710,
+          "val_ratio": 0.02,
+          "var_fc_hidden_dim": 64,
+          "warmup": 20
+        },
+        "config_sha256": "df73af2976ea55881a726fb0ef9d4f8b744cf8e65ddc7e46d2bc554b7b70e2b4",
+        "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+        "ema": {
+          "decay": 0.999,
+          "effective_decay": 0.9875,
+          "enabled": true,
+          "note": "EMA weights are stored in the trainer checkpoint but the released-code loss still uses the online policy for v_r.",
+          "optimization_step": 710,
+          "role": "stored_shadow_not_used_by_loss",
+          "warmup_steps": 0
+        },
+        "exit_code": 0,
+        "loss": {
+          "first": 0.00014495811774395406,
+          "last_epoch_mean": 1.2459094807742127e-05,
+          "min": 5.761130069004139e-06,
+          "val": 1.786234679457266e-05
+        },
+        "resume": {
+          "checkpoint_every": 5,
+          "claim_boundary": "State and schedule restore exactly; prior measurements allow up to 1e-2 long-process parameter drift, so bit-exact resume is not claimed.",
+          "resumed": false,
+          "start_epoch": 0
+        },
+        "reused": false,
+        "runtime": {
+          "cpu_count": 24,
+          "device": "cpu",
+          "jittor": "1.3.11.0",
+          "omp_num_threads": "4",
+          "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+          "python": "3.10.14"
+        },
+        "seconds": 513.8811830060004,
+        "seconds_per_step": 0.7173627699126652,
+        "steps_per_epoch": 71,
+        "total_steps": 710,
+        "train_windows": 2299,
+        "trainable_parameters": 436676,
+        "trainer_checkpoint_sha256": "aa78b3f3078ae905a7391d380ac0da674321537790ccd83ea55c7ccca40e673f",
+        "val_windows": 121,
+        "wall_seconds": 509.3275666379923
+      },
+      "wall_seconds": 806.0732841429999
+    },
+    {
+      "action_slice_mode": "code",
+      "checkpoint_reload_max_abs_delta": 0.0,
+      "done_reasons": {
+        "step_cap": 20
+      },
+      "episode_count": 20,
+      "episode_outcomes": [
+        {
+          "done_reason": "step_cap",
+          "episode": 0,
+          "policy_latency_ms": {
+            "mean": 2.9605476858108233,
+            "p95": 3.7574227986624464
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 1,
+          "policy_latency_ms": {
+            "mean": 3.1160686270215674,
+            "p95": 3.7411613986478187
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 2,
+          "policy_latency_ms": {
+            "mean": 3.08358377591123,
+            "p95": 3.7386369993328112
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 3,
+          "policy_latency_ms": {
+            "mean": 3.0384304481054616,
+            "p95": 3.808635399036575
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 4,
+          "policy_latency_ms": {
+            "mean": 2.7002446266992797,
+            "p95": 3.7634500025887974
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 5,
+          "policy_latency_ms": {
+            "mean": 3.104838687507783,
+            "p95": 4.062319500371814
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 6,
+          "policy_latency_ms": {
+            "mean": 2.8918559096993377,
+            "p95": 3.7789313937537368
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 27
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 7,
+          "policy_latency_ms": {
+            "mean": 3.2127289107562835,
+            "p95": 3.7565450998954475
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 8,
+          "policy_latency_ms": {
+            "mean": 3.0326981487538,
+            "p95": 3.7213996009086254
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 9,
+          "policy_latency_ms": {
+            "mean": 2.6937057166412446,
+            "p95": 3.5063549017650075
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 5
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 10,
+          "policy_latency_ms": {
+            "mean": 2.8987139256657173,
+            "p95": 3.688623996276874
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 11,
+          "policy_latency_ms": {
+            "mean": 2.903997970861383,
+            "p95": 3.536949506087694
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 75
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 12,
+          "policy_latency_ms": {
+            "mean": 2.796443985252113,
+            "p95": 3.559555507672485
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 1
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 13,
+          "policy_latency_ms": {
+            "mean": 3.0520887158849317,
+            "p95": 3.662822397018317
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 14,
+          "policy_latency_ms": {
+            "mean": 2.9685868366461583,
+            "p95": 3.590884197910782
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 15,
+          "policy_latency_ms": {
+            "mean": 2.9722906129153226,
+            "p95": 3.7201319035375486
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 16,
+          "policy_latency_ms": {
+            "mean": 2.8619703447095244,
+            "p95": 3.7283681085682474
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 17,
+          "policy_latency_ms": {
+            "mean": 2.814330658423645,
+            "p95": 3.696884303644765
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 34
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 18,
+          "policy_latency_ms": {
+            "mean": 2.9334794623957974,
+            "p95": 3.8194059976376593
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 19,
+          "policy_latency_ms": {
+            "mean": 3.0187412843615538,
+            "p95": 3.777388397429604
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 8
+        }
+      ],
+      "latency_ms_mean": 2.9527673167011477,
+      "nfe": 1,
+      "num_points": 1024,
+      "rollout_process": {
+        "exit_code": 0,
+        "reused": false,
+        "seconds": 806.3285841160105
+      },
+      "seed": 0,
+      "status": "ok",
+      "success_episodes": 6,
+      "success_rate": 0.3,
+      "success_step_counts": [
+        200,
+        200,
+        200,
+        200,
+        200,
+        200
+      ],
+      "success_steps": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        27,
+        0,
+        0,
+        5,
+        0,
+        75,
+        1,
+        0,
+        0,
+        0,
+        0,
+        34,
+        0,
+        8
+      ],
+      "target_mode": "detached",
+      "task": "reach-wall-v3",
+      "total_steps": 4000,
+      "train": {
+        "checkpoint_sha256": "28ca3311fe95869a1ddd50c8fcd1f575400411bcbf666e295e61af5541239c05",
+        "config": {
+          "action_slice_mode": "code",
+          "batch_size": 32,
+          "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+          "device": "cpu",
+          "down_dims": [
+            32,
+            64
+          ],
+          "ema_decay": 0.999,
+          "ema_warmup_steps": 0,
+          "embed_dim": 32,
+          "encoder_out": 64,
+          "epochs": 10,
+          "horizon": 4,
+          "kernel_size": 3,
+          "lr": 0.001,
+          "min_lr_ratio": 0.05,
+          "n_action_steps": 4,
+          "n_groups": 8,
+          "n_obs_steps": 2,
+          "num_points": 1024,
+          "pointnet_out": 64,
+          "seed": 0,
+          "steps_per_epoch": 71,
+          "target_mode": "detached",
+          "total_steps": 710,
+          "val_ratio": 0.02,
+          "var_fc_hidden_dim": 64,
+          "warmup": 20
+        },
+        "config_sha256": "d70ddfd2a4efc5024b2657dbbe8c2c8ccfadd70a1253371731e3b547a3262449",
+        "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+        "ema": {
+          "decay": 0.999,
+          "effective_decay": 0.9875,
+          "enabled": true,
+          "note": "A separate frozen EMA policy supplies v_r and is saved in the trainer checkpoint; evaluation still uses the online policy.",
+          "optimization_step": 710,
+          "role": "detached_loss_target",
+          "warmup_steps": 0
+        },
+        "exit_code": 0,
+        "loss": {
+          "first": 0.00015969872765708715,
+          "last_epoch_mean": 2.8314159606734266e-05,
+          "min": 1.680300192674622e-05,
+          "val": 2.3974331270437688e-05
+        },
+        "resume": {
+          "checkpoint_every": 5,
+          "claim_boundary": "State and schedule restore exactly; prior measurements allow up to 1e-2 long-process parameter drift, so bit-exact resume is not claimed.",
+          "resumed": false,
+          "start_epoch": 0
+        },
+        "reused": false,
+        "runtime": {
+          "cpu_count": 24,
+          "device": "cpu",
+          "jittor": "1.3.11.0",
+          "omp_num_threads": "4",
+          "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+          "python": "3.10.14"
+        },
+        "seconds": 619.785729338997,
+        "seconds_per_step": 0.8661725318873208,
+        "steps_per_epoch": 71,
+        "total_steps": 710,
+        "train_windows": 2299,
+        "trainable_parameters": 436676,
+        "trainer_checkpoint_sha256": "9772fee1161110f7adc4915b54e7f45b758f8b9251a99fc3c2ba345fb40a7a29",
+        "val_windows": 121,
+        "wall_seconds": 614.9824976399977
+      },
+      "wall_seconds": 798.7852112010005
+    },
+    {
+      "action_slice_mode": "code",
+      "checkpoint_reload_max_abs_delta": 0.0,
+      "done_reasons": {
+        "step_cap": 20
+      },
+      "episode_count": 20,
+      "episode_outcomes": [
+        {
+          "done_reason": "step_cap",
+          "episode": 0,
+          "policy_latency_ms": {
+            "mean": 2.923510596199559,
+            "p95": 3.6869508010568097
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 1,
+          "policy_latency_ms": {
+            "mean": 3.1689306121204854,
+            "p95": 3.72889980499167
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 2,
+          "policy_latency_ms": {
+            "mean": 3.0890984639678316,
+            "p95": 3.6266215043724515
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 3,
+          "policy_latency_ms": {
+            "mean": 2.9905205377492248,
+            "p95": 3.6989907021052204
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 4,
+          "policy_latency_ms": {
+            "mean": 3.0365166716527807,
+            "p95": 3.8091967042419124
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 5,
+          "policy_latency_ms": {
+            "mean": 2.9406155969551415,
+            "p95": 3.7162247943342663
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 6,
+          "policy_latency_ms": {
+            "mean": 3.046907895894499,
+            "p95": 3.7259098928188905
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 7,
+          "policy_latency_ms": {
+            "mean": 3.3090425526667664,
+            "p95": 3.9207984023960303
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 8,
+          "policy_latency_ms": {
+            "mean": 3.2504678055741336,
+            "p95": 3.9286446015466927
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 9,
+          "policy_latency_ms": {
+            "mean": 3.1123397458751283,
+            "p95": 3.6317178964964114
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 10,
+          "policy_latency_ms": {
+            "mean": 3.042231267187814,
+            "p95": 3.6903467975207604
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 4
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 11,
+          "policy_latency_ms": {
+            "mean": 3.100227357805776,
+            "p95": 3.800067398697138
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 12,
+          "policy_latency_ms": {
+            "mean": 2.924881641815569,
+            "p95": 3.5154499040800147
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 13,
+          "policy_latency_ms": {
+            "mean": 2.9313086419984864,
+            "p95": 3.7152556949877176
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 14,
+          "policy_latency_ms": {
+            "mean": 3.0639262834334495,
+            "p95": 3.729352400114294
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 13
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 15,
+          "policy_latency_ms": {
+            "mean": 2.956078806544529,
+            "p95": 3.7492334959097207
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 16,
+          "policy_latency_ms": {
+            "mean": 2.986997895467498,
+            "p95": 3.6618858037400055
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 53
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 17,
+          "policy_latency_ms": {
+            "mean": 2.963490685779921,
+            "p95": 3.6358368961373344
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 18,
+          "policy_latency_ms": {
+            "mean": 3.238914640874032,
+            "p95": 3.904604096896946
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 19,
+          "policy_latency_ms": {
+            "mean": 3.1212318507057906,
+            "p95": 3.7175604898948222
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 20
+        }
+      ],
+      "latency_ms_mean": 3.0598619775134206,
+      "nfe": 1,
+      "num_points": 1024,
+      "rollout_process": {
+        "exit_code": 0,
+        "reused": false,
+        "seconds": 831.6076804200129
+      },
+      "seed": 1,
+      "status": "ok",
+      "success_episodes": 4,
+      "success_rate": 0.2,
+      "success_step_counts": [
+        200,
+        200,
+        200,
+        200
+      ],
+      "success_steps": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        4,
+        0,
+        0,
+        0,
+        13,
+        0,
+        53,
+        0,
+        0,
+        20
+      ],
+      "target_mode": "detached",
+      "task": "reach-wall-v3",
+      "total_steps": 4000,
+      "train": {
+        "checkpoint_sha256": "a43a76e78caecb2ab5b127d5fdfc48b0980d225bd541657007adc9aa01883814",
+        "config": {
+          "action_slice_mode": "code",
+          "batch_size": 32,
+          "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+          "device": "cpu",
+          "down_dims": [
+            32,
+            64
+          ],
+          "ema_decay": 0.999,
+          "ema_warmup_steps": 0,
+          "embed_dim": 32,
+          "encoder_out": 64,
+          "epochs": 10,
+          "horizon": 4,
+          "kernel_size": 3,
+          "lr": 0.001,
+          "min_lr_ratio": 0.05,
+          "n_action_steps": 4,
+          "n_groups": 8,
+          "n_obs_steps": 2,
+          "num_points": 1024,
+          "pointnet_out": 64,
+          "seed": 1,
+          "steps_per_epoch": 71,
+          "target_mode": "detached",
+          "total_steps": 710,
+          "val_ratio": 0.02,
+          "var_fc_hidden_dim": 64,
+          "warmup": 20
+        },
+        "config_sha256": "05a2e404073effb3fe05e07a365ce08a342eb94eeffdc14ea401ddb4ebbad291",
+        "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+        "ema": {
+          "decay": 0.999,
+          "effective_decay": 0.9875,
+          "enabled": true,
+          "note": "A separate frozen EMA policy supplies v_r and is saved in the trainer checkpoint; evaluation still uses the online policy.",
+          "optimization_step": 710,
+          "role": "detached_loss_target",
+          "warmup_steps": 0
+        },
+        "exit_code": 0,
+        "loss": {
+          "first": 0.00014146532339509577,
+          "last_epoch_mean": 2.7710059826782065e-05,
+          "min": 1.7203619790961966e-05,
+          "val": 2.2710646589985117e-05
+        },
+        "resume": {
+          "checkpoint_every": 5,
+          "claim_boundary": "State and schedule restore exactly; prior measurements allow up to 1e-2 long-process parameter drift, so bit-exact resume is not claimed.",
+          "resumed": false,
+          "start_epoch": 0
+        },
+        "reused": false,
+        "runtime": {
+          "cpu_count": 24,
+          "device": "cpu",
+          "jittor": "1.3.11.0",
+          "omp_num_threads": "4",
+          "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+          "python": "3.10.14"
+        },
+        "seconds": 640.8416468789947,
+        "seconds_per_step": 0.8957576311746379,
+        "steps_per_epoch": 71,
+        "total_steps": 710,
+        "train_windows": 2299,
+        "trainable_parameters": 436676,
+        "trainer_checkpoint_sha256": "0d7299b8015bccc11a36e1069c5016f42f734779f0b64133a3e5eab711c05bd7",
+        "val_windows": 121,
+        "wall_seconds": 635.9879181339929
+      },
+      "wall_seconds": 824.4362936749967
+    },
+    {
+      "action_slice_mode": "code",
+      "checkpoint_reload_max_abs_delta": 0.0,
+      "done_reasons": {
+        "step_cap": 20
+      },
+      "episode_count": 20,
+      "episode_outcomes": [
+        {
+          "done_reason": "step_cap",
+          "episode": 0,
+          "policy_latency_ms": {
+            "mean": 3.0102221785658805,
+            "p95": 3.63527879526373
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 1,
+          "policy_latency_ms": {
+            "mean": 2.99097664255489,
+            "p95": 3.8618660997599363
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 2,
+          "policy_latency_ms": {
+            "mean": 3.000711805209754,
+            "p95": 3.6273655015975237
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 3,
+          "policy_latency_ms": {
+            "mean": 3.0647911037554714,
+            "p95": 3.802529792301357
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 4,
+          "policy_latency_ms": {
+            "mean": 3.067330194901286,
+            "p95": 3.7334455948439427
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 5,
+          "policy_latency_ms": {
+            "mean": 3.0789671341085865,
+            "p95": 3.8396691903471947
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 6,
+          "policy_latency_ms": {
+            "mean": 2.978172270518575,
+            "p95": 3.788620607519988
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 7,
+          "policy_latency_ms": {
+            "mean": 3.104787701071907,
+            "p95": 3.9918357899296097
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 8,
+          "policy_latency_ms": {
+            "mean": 3.0311036854113604,
+            "p95": 3.8260474000708196
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 9,
+          "policy_latency_ms": {
+            "mean": 2.897427522024807,
+            "p95": 3.7846092018298805
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 10,
+          "policy_latency_ms": {
+            "mean": 2.958478282271787,
+            "p95": 3.808625198144
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 11,
+          "policy_latency_ms": {
+            "mean": 3.0135796264199706,
+            "p95": 3.815464100625831
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 12,
+          "policy_latency_ms": {
+            "mean": 2.9600315513141426,
+            "p95": 3.696988898445852
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 13,
+          "policy_latency_ms": {
+            "mean": 2.9363332237221242,
+            "p95": 3.644174693909008
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 14,
+          "policy_latency_ms": {
+            "mean": 2.9660176862389154,
+            "p95": 3.726797006675042
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 15,
+          "policy_latency_ms": {
+            "mean": 3.057006536939515,
+            "p95": 3.8358448000508356
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 16,
+          "policy_latency_ms": {
+            "mean": 2.9670855668095397,
+            "p95": 3.7319009992643255
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 17,
+          "policy_latency_ms": {
+            "mean": 2.9727974176796073,
+            "p95": 3.700959908019285
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 18,
+          "policy_latency_ms": {
+            "mean": 3.2144329256948025,
+            "p95": 3.9334682980552316
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 19,
+          "policy_latency_ms": {
+            "mean": 3.2060292548128166,
+            "p95": 3.7463361994014117
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        }
+      ],
+      "latency_ms_mean": 3.023814115501287,
+      "nfe": 1,
+      "num_points": 1024,
+      "rollout_process": {
+        "exit_code": 0,
+        "reused": false,
+        "seconds": 780.5087355029973
+      },
+      "seed": 2,
+      "status": "ok",
+      "success_episodes": 0,
+      "success_rate": 0.0,
+      "success_step_counts": [],
+      "success_steps": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "target_mode": "detached",
+      "task": "reach-wall-v3",
+      "total_steps": 4000,
+      "train": {
+        "checkpoint_sha256": "f2605db834596746062e683d29c8ae4e4f27e9fb7e9731af44b5f14f739247a7",
+        "config": {
+          "action_slice_mode": "code",
+          "batch_size": 32,
+          "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+          "device": "cpu",
+          "down_dims": [
+            32,
+            64
+          ],
+          "ema_decay": 0.999,
+          "ema_warmup_steps": 0,
+          "embed_dim": 32,
+          "encoder_out": 64,
+          "epochs": 10,
+          "horizon": 4,
+          "kernel_size": 3,
+          "lr": 0.001,
+          "min_lr_ratio": 0.05,
+          "n_action_steps": 4,
+          "n_groups": 8,
+          "n_obs_steps": 2,
+          "num_points": 1024,
+          "pointnet_out": 64,
+          "seed": 2,
+          "steps_per_epoch": 71,
+          "target_mode": "detached",
+          "total_steps": 710,
+          "val_ratio": 0.02,
+          "var_fc_hidden_dim": 64,
+          "warmup": 20
+        },
+        "config_sha256": "e8b13d0a2ef8fe0a764448cbf6528b58dc5d9acb73929b96a68320ad53a4c9ba",
+        "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+        "ema": {
+          "decay": 0.999,
+          "effective_decay": 0.9875,
+          "enabled": true,
+          "note": "A separate frozen EMA policy supplies v_r and is saved in the trainer checkpoint; evaluation still uses the online policy.",
+          "optimization_step": 710,
+          "role": "detached_loss_target",
+          "warmup_steps": 0
+        },
+        "exit_code": 0,
+        "loss": {
+          "first": 0.00014495811774395406,
+          "last_epoch_mean": 2.8109371374790805e-05,
+          "min": 1.753712240315508e-05,
+          "val": 2.476420377206523e-05
+        },
+        "resume": {
+          "checkpoint_every": 5,
+          "claim_boundary": "State and schedule restore exactly; prior measurements allow up to 1e-2 long-process parameter drift, so bit-exact resume is not claimed.",
+          "resumed": false,
+          "start_epoch": 0
+        },
+        "reused": false,
+        "runtime": {
+          "cpu_count": 24,
+          "device": "cpu",
+          "jittor": "1.3.11.0",
+          "omp_num_threads": "4",
+          "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+          "python": "3.10.14"
+        },
+        "seconds": 636.5365116920002,
+        "seconds_per_step": 0.8913098551168985,
+        "steps_per_epoch": 71,
+        "total_steps": 710,
+        "train_windows": 2299,
+        "trainable_parameters": 436676,
+        "trainer_checkpoint_sha256": "08afa2d64962a9faad7b9de97f83d7d06b12e88e2640c9489b2d6f4feba1ecdc",
+        "val_windows": 121,
+        "wall_seconds": 632.829997132998
+      },
+      "wall_seconds": 773.960541788998
+    }
+  ],
+  "config": {
+    "batch_size": 32,
+    "checkpoint_every": 5,
+    "data_dir": "flowpolicy-fpj035-data",
+    "device": "cpu",
+    "down_dims": [
+      32,
+      64
+    ],
+    "ema_decay": 0.999,
+    "ema_warmup_steps": 0,
+    "embed_dim": 32,
+    "encoder_out": 64,
+    "episodes": 20,
+    "epochs": 10,
+    "kernel_size": 3,
+    "max_steps": 200,
+    "n_groups": 8,
+    "num_points": 1024,
+    "pointnet_out": 64,
+    "run_label": "fpj035-matched-target",
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "target_modes": [
+      "code",
+      "detached"
+    ],
+    "tasks": [
+      "reach-wall-v3"
+    ],
+    "threads": 4,
+    "var_fc_hidden_dim": 64
+  },
+  "evidence_status": "matched small-channel CPU target comparison; not a full-channel or paper-scale run",
+  "matched_validation": {
+    "applicable": true,
+    "pairs": [
+      {
+        "base_mode": "code",
+        "checks": {
+          "code_vs_detached": {
+            "details": {
+              "data_sha256_equal": true,
+              "episode_count_equal": true,
+              "rollout_protocol_equal": true,
+              "target_mode_differs": true,
+              "total_steps_equal": true,
+              "train_windows_equal": true,
+              "training_config_except_target_equal": true
+            },
+            "passed": true,
+            "shared_training_config_sha256": "fc62c942e175b7b7a8fad3b56af2cbe87e43f8bced910012d6ceaaddab836029"
+          }
+        },
+        "seed": 0,
+        "task": "reach-wall-v3"
+      },
+      {
+        "base_mode": "code",
+        "checks": {
+          "code_vs_detached": {
+            "details": {
+              "data_sha256_equal": true,
+              "episode_count_equal": true,
+              "rollout_protocol_equal": true,
+              "target_mode_differs": true,
+              "total_steps_equal": true,
+              "train_windows_equal": true,
+              "training_config_except_target_equal": true
+            },
+            "passed": true,
+            "shared_training_config_sha256": "c9e27a25c26460730d5305aafad5dd6c6382fa87bef24e9a563da3be1de9016b"
+          }
+        },
+        "seed": 1,
+        "task": "reach-wall-v3"
+      },
+      {
+        "base_mode": "code",
+        "checks": {
+          "code_vs_detached": {
+            "details": {
+              "data_sha256_equal": true,
+              "episode_count_equal": true,
+              "rollout_protocol_equal": true,
+              "target_mode_differs": true,
+              "total_steps_equal": true,
+              "train_windows_equal": true,
+              "training_config_except_target_equal": true
+            },
+            "passed": true,
+            "shared_training_config_sha256": "c72ce039a16b29b3a9527efaeaf105dd435d98f700b3d4e911ef8c3f39eef9a7"
+          }
+        },
+        "seed": 2,
+        "task": "reach-wall-v3"
+      }
+    ],
+    "passed": true
+  },
+  "preflight": {
+    "arms": {
+      "code": {
+        "ema_role": "stored_shadow_not_used_by_loss",
+        "target_mode": "code"
+      },
+      "detached": {
+        "ema_role": "detached_loss_target",
+        "target_mode": "detached"
+      }
+    },
+    "intended_differences": [
+      "target_mode",
+      "ema_role/target implementation"
+    ],
+    "passed": true,
+    "shared_config": {
+      "action_slice_mode": "code",
+      "batch_size": 32,
+      "checkpoint_every": 5,
+      "data_sha256": {
+        "reach-wall-v3": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210"
+      },
+      "device": "cpu",
+      "down_dims": [
+        32,
+        64
+      ],
+      "ema_decay": 0.999,
+      "ema_warmup_steps": 0,
+      "embed_dim": 32,
+      "encoder_out": 64,
+      "episodes": 20,
+      "epochs": 10,
+      "kernel_size": 3,
+      "lr": 0.001,
+      "max_steps": 200,
+      "n_groups": 8,
+      "nfe": 1,
+      "num_points": 1024,
+      "pointnet_out": 64,
+      "rollout_noise_seed_rule": "same as training seed",
+      "seeds": [
+        0,
+        1,
+        2
+      ],
+      "tasks": [
+        "reach-wall-v3"
+      ],
+      "threads": 4,
+      "var_fc_hidden_dim": 64,
+      "warmup": 20
+    },
+    "shared_config_sha256": "a02835559c7daac866c47afb946128f2c8c0c5c4fa18280f8aaac36a5fd21eec"
+  },
+  "prohibited_claims": [
+    "paper success rate reproduced",
+    "the best cell is the result",
+    "paper architecture equals the full paper training recipe",
+    "small-channel CPU comparison predicts full-channel GPU behavior"
+  ],
+  "schema_version": 1,
+  "target_modes": [
+    "code",
+    "detached"
+  ],
+  "targets": {
+    "code": {
+      "tasks": {
+        "reach-wall-v3": {
+          "cells_failed": 0,
+          "cells_ok": 3,
+          "done_reasons": {
+            "step_cap": 60
+          },
+          "episodes_per_seed": [
+            20
+          ],
+          "latency_ms_mean": 2.8909706732429634,
+          "nfe": [
+            1
+          ],
+          "num_points": [
+            1024
+          ],
+          "seeds": [
+            0,
+            1,
+            2
+          ],
+          "success_rate_mean": 0.5166666666666667,
+          "success_rate_per_seed": [
+            0.45,
+            0.55,
+            0.55
+          ],
+          "success_rate_std": 0.057735026918962595,
+          "train_last_epoch_loss": {
+            "mean": 1.2773342569517967e-05,
+            "std": 3.8326702110860165e-07
+          },
+          "train_seconds_per_step": {
+            "mean": 0.7233061729028122,
+            "std": 0.009202198564575317
+          },
+          "validation_loss": {
+            "mean": 1.1901816530250168e-05,
+            "std": 5.479252344712946e-06
+          }
+        }
+      }
+    },
+    "detached": {
+      "tasks": {
+        "reach-wall-v3": {
+          "cells_failed": 0,
+          "cells_ok": 3,
+          "done_reasons": {
+            "step_cap": 60
+          },
+          "episodes_per_seed": [
+            20
+          ],
+          "latency_ms_mean": 3.012147803238618,
+          "nfe": [
+            1
+          ],
+          "num_points": [
+            1024
+          ],
+          "seeds": [
+            0,
+            1,
+            2
+          ],
+          "success_rate_mean": 0.16666666666666666,
+          "success_rate_per_seed": [
+            0.3,
+            0.2,
+            0.0
+          ],
+          "success_rate_std": 0.15275252316519466,
+          "train_last_epoch_loss": {
+            "mean": 2.804453026943571e-05,
+            "std": 3.0722534521475756e-07
+          },
+          "train_seconds_per_step": {
+            "mean": 0.8844133393929524,
+            "std": 0.015952773169831007
+          },
+          "validation_loss": {
+            "mean": 2.381639387749601e-05,
+            "std": 1.0358486569403434e-06
+          }
+        }
+      }
+    }
+  }
+}

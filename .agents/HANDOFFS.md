@@ -3282,3 +3282,70 @@
 - Recommended next role: FPJ-035 implementation.
 
 
+## FPJ035-IMPL-01
+
+- Task: FPJ-035 implementation, attempt 1.
+- Extended `scripts/experiments.py` from `(task, seed)` to matched `(target, task, seed)` cells while
+  preserving `target_mode=code` as the single-mode default. Target/EMA settings now flow through
+  training, periodic resume, rollout, summaries, reuse provenance and target-specific directories.
+- Added preflight data/config SHA256, per-seed train/validation/resource records, all episode
+  outcomes and post-run matched checks that remove only `target_mode` before comparing configs.
+- Added `scripts/build_target_evidence.py` and tests; the public bundle excludes datasets,
+  checkpoints, logs, absolute paths and secrets.
+- Formal local run: `reach-wall-v3`, small channels 32/64, 1024 points, batch 32, 10 epochs,
+  710 updates/seed, EMA 0.999, seeds 0/1/2 and 20 episodes/seed for both arms. The first NTFS-backed
+  attempt was interrupted after one epoch because decompressed reads caused a six-hour projection;
+  an 18 MiB byte-identical WSL temporary copy reduced I/O without changing the dataset SHA.
+- Result: code 9/20, 11/20, 11/20 = 51.67% ± 5.77%; detached 6/20, 4/20, 0/20 =
+  16.67% ± 15.28%. Detached validation loss was `2.38e-5 ± 1.04e-6` versus
+  `1.19e-5 ± 5.48e-6`; training was `0.884 ± 0.016 s/step` versus `0.723 ± 0.009`.
+- Three matched-pair checks, six cells and 120 episode outcomes passed. Public evidence is in
+  `evidence/fpj035/`; raw outputs/checkpoints remain ignored and local.
+- No cloud instance was started during FPJ-035.
+
+
+## FPJ035-VERIFY-SINGLE-01
+
+- User-directed compact verification: one exact full suite was attempted after implementation.
+- That run reported `247 passed, 1 skipped, 2 failed`; both failures were the same test-fixture
+  omission (`action_slice_mode`) and did not affect the real report, whose six cells contained the
+  field and whose matched validation passed.
+- The validator was hardened to fail closed rather than raise on incomplete rollout protocol data,
+  and the fixture was corrected. The single necessary final rerun reported
+  `249 passed, 1 skipped, 48 warnings in 228.00s`.
+- The skip remains `tests/test_conv1d_parity.py:12` because torch is absent from the core Jittor
+  environment and is not counted among the 249 passes.
+
+
+## FPJ035-AP-SINGLE-01
+
+- No separate repeated anti-pattern role was run per the user's single-check instruction.
+- Guarded risks now covered by code/tests: target directory collision, implicit code default change,
+  detached without EMA, duplicate modes/seeds, mismatched reused provenance, incomplete protocol
+  records, selective seed reporting, missing pair, private paths and checkpoint publication.
+- Remaining nonblocking boundary: the experiment ran from git base `0f329e1` with the FPJ-035
+  working tree not yet committed; the final publication commit adds only report/validator/test/docs
+  hardening after the completed training and does not alter its model or rollout outputs.
+
+
+## FPJ035-QUAL-SINGLE-01
+
+- Report language separates observed local facts from interpretation: detached is worse for this
+  710-update small-channel CPU budget, not universally and not as a paper-scale conclusion.
+- D022, README and the defence guide report all three seeds, sample standard deviations, cost and
+  claim boundaries. The compact bundle retains all 120 outcomes and failures.
+- The user authorized a later A10 validation; it is separated as FPJ-036 so no cloud result is
+  silently folded into the local three-seed evidence.
+
+
+## FPJ035-GATE-01
+
+- Decision: PASS under the user's explicit no-repeated-review instruction.
+- All seven FPJ-035 acceptance items are satisfied. Exact final baseline:
+  `249 passed, 1 skipped, 48 warnings in 228.00s`; skip reported separately.
+- Local matched result and evidence are complete; no raw dataset, checkpoint, cloud credential or
+  private path is staged for publication.
+- FPJ-035 marked complete. FPJ-036 activated for the user-authorized A10 full-channel paired
+  feasibility run, initially one seed only, with mandatory quota check and instance shutdown.
+
+

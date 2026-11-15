@@ -117,10 +117,16 @@ Gate `FPJ033-GATE-01` 通过。`reach-wall-v3` 的 10 个专家 variant 全部�
 
 ## 后续顺序
 
-### [>] FPJ-035：target 语义对照
+### [x] FPJ-035：target 语义对照
 
 在相同任务、示范、seed、点数和训练预算下比较 released-code target 与 detached EMA target；
 先报告损失、稳定性与资源开销，再决定是否值得扩到完整通道。
+
+### [>] FPJ-036：A10 完整通道 target 配对验证
+
+在 FPJ-035 本地三 seed 对照封闭后，使用阿里云 PAI-DSW A10 对完整 512/1024/2048 通道做
+code/detached 单 seed 严格配对。先回答 CUDA 可行性、显存、耗时与闭环方向是否一致，不把单 seed
+验证写成正式三 seed 结论；证据完成后立即停止实例。
 
 ## 测试可靠性
 

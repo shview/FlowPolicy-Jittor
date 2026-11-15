@@ -11,6 +11,7 @@ if str(REPO_ROOT / "scripts") not in sys.path:
     sys.path.insert(0, str(REPO_ROOT / "scripts"))
 
 import build_evidence_bundle as bundle  # noqa: E402
+import build_target_evidence as target_bundle  # noqa: E402
 
 
 def test_train_and_rollout_paths_are_replaced_with_portable_names():
@@ -98,3 +99,50 @@ def test_cloud_commands_are_made_portable_and_public_safe():
         "scripts/rollout.py",
     ]
     bundle.assert_public_safe(value)
+
+
+def test_target_comparison_bundle_keeps_outcomes_but_drops_private_paths(tmp_path):
+    report = {
+        "target_modes": ["code", "detached"],
+        "targets": {"code": {"tasks": {}}, "detached": {"tasks": {}}},
+        "preflight": {"passed": True, "shared_config_sha256": "shared"},
+        "matched_validation": {"passed": True, "pairs": []},
+        "config": {"tasks": ["reach-wall-v3"], "data_dir": "/home/student/data"},
+        "cells": [
+            {
+                "target_mode": "code",
+                "task": "reach-wall-v3",
+                "seed": 0,
+                "status": "ok",
+                "episode_count": 1,
+                "success_episodes": 0,
+                "success_rate": 0.0,
+                "episode_outcomes": [
+                    {
+                        "episode": 0,
+                        "success": False,
+                        "steps": 200,
+                        "success_steps": 0,
+                        "done_reason": "step_cap",
+                    }
+                ],
+                "train": {
+                    "command": ["/home/student/python", "/home/student/train.py"],
+                    "log": "/home/student/train.log",
+                    "checkpoint": "/home/student/policy.ckpt",
+                    "checkpoint_sha256": "policy-hash",
+                    "trainer_checkpoint_sha256": "trainer-hash",
+                    "config": {"target_mode": "code"},
+                    "ema": {"trainer_checkpoint": "/home/student/trainer.ckpt"},
+                },
+                "rollout": {"command": ["/home/student/python"], "exit_code": 0},
+            }
+        ],
+        "prohibited_claims": ["paper success rate reproduced"],
+    }
+    sanitized = target_bundle.sanitize_report(report)
+    assert sanitized["config"]["data_dir"] == "data"
+    assert sanitized["cells"][0]["episode_outcomes"][0]["steps"] == 200
+    assert "command" not in sanitized["cells"][0]["train"]
+    assert "trainer_checkpoint" not in sanitized["cells"][0]["train"]["ema"]
+    bundle.assert_public_safe(sanitized)

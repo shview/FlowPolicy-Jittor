@@ -306,3 +306,23 @@ detached EMA；先做三步 JIT warm-up，再测五步，并记录当前/峰值 
 原始记录在 `evidence/fpj034/resource_probe.json`。正式同预算 target 对照留给 FPJ-035，且 FPJ-034
 不授权重启云端实例。
 
+## D022：target 语义先做本地严格配对，再分阶段扩到云端
+
+**决定**：FPJ-035 先在 `reach-wall-v3` 上固定同一数据 SHA256、seeds 0/1/2、1024 点、小通道模型、
+batch 32、10 epochs（710 updates/seed）、EMA 0.999 与每 seed 20 个 episode，只改变
+`target_mode` 和 EMA 的 loss 角色。`scripts/experiments.py` 以 target/task/seed 分目录，训练、恢复、
+rollout 与汇总都显式携带 target/EMA 配置；完成后逐 seed 删除 `target_mode` 字段再比较其余训练配置，
+同时核对数据哈希、窗口数、更新数和 rollout 协议。
+
+**结果**：全部 6 个单元和 120 个 episode 完成，三组匹配检查全过。released-code + stored EMA 为
+9/20、11/20、11/20，即 **51.67% ± 5.77%**；detached EMA loss target 为 6/20、4/20、0/20，
+即 **16.67% ± 15.28%**。detached 平均验证 loss 为 `2.38e-5 ± 1.04e-6`，code 为
+`1.19e-5 ± 5.48e-6`；训练时间为 `0.884 ± 0.016 s/step` 对 `0.723 ± 0.009 s/step`，本地约多
+22.3%。所有 checkpoint 重载动作最大差为 0。脱敏证据在 `evidence/fpj035/`，不含 Zarr、checkpoint、
+子进程日志或绝对路径。
+
+**解释与边界**：这支持“在本次 710-update 短预算中，独立 EMA target 收敛更慢且闭环表现更差”，
+不支持“detached target 普遍无效”或“论文方法不如公开代码”。模型是小通道 CPU，训练预算远少于论文，
+仿真栈也经过替换。用户已授权在本地报告封闭后进行 A10 验证；云端先跑完整通道单 seed 配对与资源
+预检，再根据剩余额度和结果决定是否扩到三 seed，不能把单 seed 云端结果冒充正式均值。
+
