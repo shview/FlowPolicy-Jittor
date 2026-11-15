@@ -152,6 +152,7 @@
   - 不得声称已复现论文成功率、CUDA 已验证、PyTorch/Jittor 精确对齐、EMA 已完成、端到端训练或 MetaWorld rollout 已完成。
   - policy checkpoint 仍不等于完整 trainer checkpoint。
 - Recommended next role: verification
+
 - Next agent should read:
   - `src/flowpolicy_jittor/model/policy.py`（`_runtime_checkpoint_config`、`_assert_runtime_configuration`、`save_checkpoint`）
   - `tests/test_policy.py`（`test_unet_condition_flag_mutation_blocks_save`）
@@ -203,6 +204,7 @@
 - Prohibited claims:
   - 不得把本次 CPU 验证表述为论文结果复现或 CUDA 通过。
 - Recommended next role: anti_pattern
+
 - Next agent should read:
   - `src/flowpolicy_jittor/model/policy.py:305-355`
   - `tests/test_policy.py`（新增用例）
@@ -257,6 +259,7 @@
 - Prohibited claims:
   - 不得据此声称 EMA、CUDA、完整通道或训练 loop 已验证。
 - Recommended next role: quality
+
 - Next agent should read:
   - `src/flowpolicy_jittor/model/conditional_unet1d.py:206-216, 435-460`
   - `src/flowpolicy_jittor/model/pointnet.py:64-95`
@@ -432,6 +435,7 @@
 - Prohibited claims:
   - 不得把窗口数量一致解释为“训练数据分布正确”；分布正确性要等真实示范与过拟合实验。
 - Recommended next role: anti_pattern
+
 - Next agent should read:
   - `src/flowpolicy_jittor/data/dataset.py`
   - 本记录与 FPJ022-IMPL-01
@@ -2359,5 +2363,405 @@
   - skipped test counted as passed.
 - Recommended next role: FPJ-033 implementation
 
+## FPJ033-IMPL-01
+
+- Task: FPJ-033 harder MetaWorld task and full-channel limited-budget experiment
+- Role completed: implementation
+- Result: implementation complete; ready for independent verification
+- Owner: `/root`
+- Cloud execution:
+  - fixed checkout commit: `929769aa8bdcff587d6bcf6c0689a499ff124918`;
+  - dataset archive SHA256: `f5826982ff24cc9d22018306fe3fbaaede239047464b610a4dd94c150aef45bb`;
+  - logical Zarr content SHA256: `1552bf53f994840b4cbb81ad6ce39584bb0923ed4b3b8601096481c2a0b7daae`;
+  - preflight: Jittor CUDA true, full `512/1024/2048` channels, 255,138,308 trainable parameters,
+    one finite update, action shape `[2,3,4]`;
+  - formal budget: `reach-wall-v3`, batch 64, 30 epochs, 1050 updates/seed, seeds 0/1/2,
+    20 rollout episodes/seed, 200-step cap, 1024 points, NFE=1;
+  - seed results: 4/20, 5/20, 10/20 = 20%, 25%, 50%; aggregate
+    `31.67% ± 16.07%` sample standard deviation;
+  - mean policy latency: 3.775 ms; sampled peak GPU memory: 10605 MiB;
+  - all 60 episode records exist and all cells returned exit code 0; all done reasons are `step_cap`;
+  - policy checkpoint SHA256 values: seed 0 `e8eac82e...ce96e`, seed 1
+    `0282a318...c854`, seed 2 `b52e18f2...01df`; full values are public in the seed summaries;
+  - checkpoint reload max absolute deltas: `2.384e-7`, `1.788e-7`, `3.386e-5`;
+  - DSW instance confirmed `已停止` at 2026-11-15 20:25 China time; console showed about
+    4h35m cumulative service and 15-day stopped-disk retention.
+- Product files changed:
+  - `scripts/build_evidence_bundle.py`: formal-mode sanitization, portable cloud commands,
+    public summary/manifest generation and source/public SHA256 inventory;
+  - `tests/test_evidence_bundle.py`: portable cloud-command regression test;
+  - `evidence/fpj033/formal/**`: sanitized metadata, dataset fingerprint, preflight, aggregate,
+    three train summaries, three epoch curves and all 60 rollout episodes; no dataset/checkpoint;
+  - `README.md`, `docs/REPRODUCTION_PLAN.md`, `docs/DEFENSE_GUIDE.md`,
+    `docs/ENVIRONMENT.md`, `docs/CLOUD_ALIYUN.md`, `docs/DECISIONS.md`: synchronized result,
+    matched-budget interpretation, cloud stop state and D020 evidence boundary.
+- Coordination files changed:
+  - `.agents/STATE.yaml`;
+  - `.agents/HANDOFFS.md` (this append-only record).
+- Exact local verification:
+  - `python -m pytest tests/test_evidence_bundle.py -q` -> exit 0, `4 passed in 0.10s`;
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python scripts/validate_agent_state.py`
+    -> exit 0, `Agent state OK: task=FPJ-033 stage=implementation status=in_progress` before handoff;
+  - targeted WSL tests for evidence/resume/experiments -> exit 0, `12 passed, 8 warnings in 9.50s`;
+  - required full test command -> exit 0, `227 passed, 1 skipped, 32 warnings in 181.32s`;
+  - skipped `tests/test_conv1d_parity.py` because torch is absent from the core Jittor environment;
+    it is not counted as passed;
+  - independent public-evidence recomputation -> 0 hash failures, rates `0.2,0.25,0.5`,
+    mean `0.31666666666666665`, sample std `0.16072751268321592`, 60 episodes,
+    `step_cap=60`;
+  - secret/private-path scan -> no match; Markdown relative-link check -> `OK`;
+  - `git diff --check` -> exit 0 (only Git line-ending conversion warnings).
+- Acceptance coverage:
+  - expert 10-variant gate, deterministic 20-demo Zarr, resume CLI, local train/rollout smoke,
+    full-channel three-seed cloud run, public sanitized evidence and fresh-clone quick start are complete;
+  - comparison with `button-press-wall-v3` uses matched point count, model, batch, epochs, seeds and
+    episodes and is labeled full-channel limited-budget.
+- Remaining risks:
+  - seed variance is large; the 50% seed must not be reported alone;
+  - peak GPU memory is an external `nvidia-smi` sample, not an allocator-instrumented maximum;
+  - public evidence intentionally excludes the dataset and checkpoints; raw copies remain local/cloud-only;
+  - no success/failure video yet; modern MetaWorld/MuJoCo remains a substitute stack;
+  - detached EMA target remains FPJ-034.
+- Prohibited claims:
+  - paper success rate, 3000-epoch or 37-task recipe reproduced;
+  - best seed equals the result;
+  - detached EMA target used;
+  - bit-exact CUDA or long-process resume;
+  - public repository contains raw dataset/checkpoint.
+- Recommended next role: verification
+
+## FPJ033-VERIFY-01
+
+- Task: FPJ-033 harder MetaWorld task and full-channel limited-budget experiment
+- Role completed: verification
+- Result: passed; ready for anti-pattern review
+- Owner: `/root/fpj033_verification`
+- Product files changed: none (read-only verification)
+- Coordination files changed:
+  - `.agents/STATE.yaml`
+  - `.agents/HANDOFFS.md` (this append-only record)
+- Required and focused commands:
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q`
+    - exit 0; `227 passed, 1 skipped, 32 warnings in 178.68s`;
+    - skipped `tests/test_conv1d_parity.py` because PyTorch is absent from the core Jittor environment; it is not counted as passed;
+    - warnings are Zarr `product` deprecation warnings in dataset-fingerprint, overfit and resume tests.
+  - targeted evidence/resume/experiments/fingerprint tests:
+    - exit 0; `14 passed, 24 warnings in 9.97s`.
+  - `scripts/check_environment.py --strict-train --allow-cpu`
+    - exit 0; strict check passed on Python 3.10.14 / Jittor 1.3.11 CPU; this does not replace the recorded A10 evidence.
+  - `scripts/dataset_fingerprint.py data/reach-wall-v3.zarr` in WSL
+    - exit 0; independently read all five Zarr arrays and reproduced logical SHA256
+      `1552bf53f994840b4cbb81ad6ce39584bb0923ed4b3b8601096481c2a0b7daae`.
+  - regenerated the formal public bundle with `scripts/build_evidence_bundle.py` into a temporary directory and compared it byte-for-byte by filename and SHA256
+    - 15 expected / 15 actual files; zero missing, extra or hash-mismatched files.
+  - `git diff --check`
+    - exit 0; only Git CRLF conversion warnings.
+  - candidate-tree, Markdown-link, prohibited-claim and secret-pattern scans
+    - 90 tracked/unignored candidate files; no root dataset/output/checkpoint path, prohibited binary suffix or file over 10 MiB;
+    - 7 public README/docs/evidence Markdown files checked, zero broken relative links;
+    - prohibited phrases occur only in explicit negative boundaries/lists and tests;
+    - formal evidence has no secret/private-path match. A dummy-secret regression string exists only in `tests/test_evidence_bundle.py`.
+- Independent formal-evidence recomputation:
+  - verified all 15 public hashes and every `manifest.source_files_sha256` hash against the downloaded source JSON;
+  - config is full `512/1024/2048`, batch 64, 30 epochs, 1024 points, seeds 0/1/2 and 20 episodes/seed;
+  - each seed has 30 epoch records, 1050 updates, six periodic trainer checkpoints at epochs 5/10/15/20/25/30, matching policy-checkpoint hashes and successful train/rollout exit codes;
+  - independently recounted successes as `[4,5,10]` from all 60 episode records: rates `[0.20,0.25,0.50]`, mean `0.31666666666666665`, sample standard deviation `0.16072751268321592`;
+  - independently recomputed mean policy latency `3.7751192007474974 ms`; all 60 episodes contain 200 steps and `done_reason=step_cap`;
+  - preflight records CUDA, 255,138,308 trainable parameters, a finite update and action shape `[2,3,4]`; cloud metadata records A10/CUDA/software/budget/run-stop state and labels peak memory as sampled.
+- Independent preliminary/local evidence:
+  - expert probe has 10 distinct variants, 10/10 success, first-success steps 34--50 and `suitable=true`;
+  - original/repeat probe records and deterministic dataset fingerprints match exactly;
+  - formal demonstration dataset is 20 episodes x 120 steps with point cloud `[2400,1024,3]`, state `[2400,9]`, action `[2400,4]`;
+  - local planned stop/resume reached four epochs with epoch-2 and epoch-4 checkpoints; local five-episode rollout stored one success and four explicit failures rather than suppressing failures;
+  - archive SHA256 `f5826982ff24cc9d22018306fe3fbaaede239047464b610a4dd94c150aef45bb` matches a streamed concatenation of all three split files without creating a replacement archive.
+- Matched-budget comparison check:
+  - independently compared the retained FPJ-032 button summaries with all three public FPJ-033 train/rollout summaries;
+  - model dimensions and remaining architecture fields, 255,138,308 parameters, 1024 points, 2299/121 train/validation windows, batch 64, 30 epochs, 1050 updates, three seeds, 20 episodes, 200-step cap, NFE=1 and action-slice mode all match;
+  - optimization schedule is not identical: button used learning rate `1e-4`, warmup `500`; reach-wall used learning rate `1e-3`, warmup `20`. This does not violate the stated acceptance item (matched model, point count, seed count and compute budget), and public prose enumerates the matched fields rather than claiming every hyperparameter is identical. It does limit causal attribution of the success-rate difference.
+- Adversarial check added by verification:
+  - called `assert_public_safe` with synthetic `C:/Users/alice/private.json`, `/root/private.json` and `/data/private.json` values;
+  - all three were accepted, because the current path patterns cover the actual cloud/home formats but not generic absolute paths;
+  - an independent recursive scan confirms none of these path forms (or any private absolute command argument) exists in the formal bundle, so the submitted evidence remains sanitized. This is a non-blocking future-hardening defect in the validator, not an artifact failure.
+- Acceptance decision:
+  1. 10-variant expert-quality gate: passed;
+  2. deterministic new Zarr without modifying prior datasets: passed;
+  3. periodic trainer checkpoint and tested CLI resume with non-bit-exact boundary: passed;
+  4. local train/rollout smoke with failures retained: passed;
+  5. A10 full-channel 3-seed x 20-episode evidence with hashes/losses/latency/memory/all episodes: passed;
+  6. sanitized public evidence excluding dataset/checkpoint/secrets/private paths: passed for the actual bundle;
+  7. README quick start, explicit simulator interpreter and documented fresh-clone packaging/CLI check: passed; the record explicitly does not claim a full clean-OS/CUDA install;
+  8. button comparison matched on the acceptance-defined model/point/budget fields and labeled limited-budget, not paper result: passed with the optimization-schedule limitation above.
+- Findings:
+  - P1: none.
+  - P2 (non-blocking): formal-bundle validation should reject generic Windows and Unix absolute paths, even though the current artifact independently contains none.
+  - P2 (interpretation): learning rate and warmup differ between the button and reach-wall formal runs. Continue to call this a matched-*budget* comparison, not a fully controlled same-hyperparameter task ablation.
+  - P3: `docs/CLOUD_ALIYUN.md` says “five layers of evidence” while the numbered list now contains six; wording only.
+- Remaining risks and prohibited claims:
+  - three reach-wall seeds have substantial variance; never report the 50% seed alone;
+  - sampled `nvidia-smi` peak is not an allocator-instrumented maximum;
+  - public summaries are auditable but intentionally omit raw Zarr/checkpoints;
+  - no visual failure video, detached EMA target, paper simulator, 3000-epoch/37-task or paper-success-rate claim is supported;
+  - save/resume is not bit-exact in every long-process setting.
+- Recommended next role: anti_pattern
+
+## FPJ033-AP-01
+
+- Task: FPJ-033 harder MetaWorld task and full-channel limited-budget experiment
+- Role completed: anti_pattern
+- Result: passed; no P1/blocker, ready for quality review
+- Owner: `/root/fpj033_anti_pattern`
+- Product files changed: none (read-only anti-pattern review)
+- Coordination files changed:
+  - `.agents/STATE.yaml`
+  - `.agents/HANDOFFS.md` (this append-only record)
+- Repository and history hygiene:
+  - candidate-tree scan found no tracked/unignored root `data/`, `outputs/`, `checkpoints/`,
+    `artifacts/` or `wandb/` path and no `.zarr`/checkpoint/model/archive suffix;
+  - entire Git name history contains none of those forbidden paths or suffixes;
+  - 93 reachable historical blobs were sized; none exceeds 10 MiB, and the largest is
+    `.agents/HANDOFFS.md` at 140887 bytes;
+  - `git check-ignore -v` confirms `data/reach-wall-v3.zarr` and the downloaded cloud JSON
+    under `outputs/fpj033/` remain ignored;
+  - the formal evidence directory contains exactly 15 JSON/Markdown files and no dataset,
+    checkpoint, model or archive extension.
+- Evidence integrity and sanitization:
+  - recomputed all `manifest.files_sha256` and `manifest.source_files_sha256` values: zero mismatches;
+  - independently recounted 60 unique episode indices, 19 successes and 60 `step_cap` endings;
+  - recursive formal-bundle scan for Windows drives, `/home`, `/root`, `/Users`, `/data`, `/mnt`,
+    account/workspace/instance identifiers and common secret signatures returned no match;
+  - candidate-tree and Git-patch secret scans found only the deliberately synthetic
+    `ghp_abcdefghijklmnopqrstuvwxyz123456` rejection fixture at `tests/test_evidence_bundle.py:51`;
+    no real credential was found.
+- Prohibited-claim audit:
+  - README/docs/evidence consistently label the result full-channel limited-budget, A10 and
+    substitute-simulator; paper-success, 3000-epoch/37-task, detached-EMA, best-seed,
+    bit-exact-resume and local-CUDA phrases occur only in explicit negative boundaries;
+  - seed results are always shown as 20%/25%/50% with 31.67% ± 16.07%, not as the 50% best seed;
+  - public evidence calls peak memory a sampled `nvidia-smi` value, not an allocator maximum.
+- Matched-budget audit:
+  - public prose enumerates the actually matched fields at `README.md:107-109` and uses
+    “匹配预算” at `docs/REPRODUCTION_PLAN.md:248,285`, `docs/DEFENSE_GUIDE.md:128` and
+    `docs/DECISIONS.md:266,274,281`;
+  - reach-wall records learning rate `1e-3` and warmup `20` at
+    `evidence/fpj033/formal/seed-0-train-summary.json:15,22`, while the retained button record
+    used `1e-4` and warmup `500` (`.agents/HANDOFFS.md:2477`);
+  - no current public sentence claims every hyperparameter is identical, but this difference
+    prevents a strict causal “task difficulty only” ablation interpretation.
+- Findings:
+  - P1: none.
+  - P2 (future hardening): `scripts/build_evidence_bundle.py:15-22` rejects the observed private
+    path formats but `assert_public_safe` still accepts synthetic `C:/Users/alice/private.json`,
+    `/root/private.json` and `/data/private.json`; the submitted formal bundle is independently clean.
+  - P2 (interpretation): learning rate and warmup differ across the two full-channel tasks.
+    Continue to say “matched model and compute budget” rather than “identical hyperparameters” or
+    a strict task-only ablation.
+  - P3: `docs/CLOUD_ALIYUN.md:35` says “five layers of evidence” while items 1--6 appear at
+    lines 37--83.
+  - P3: the synthetic GitHub-token-shaped test fixture at `tests/test_evidence_bundle.py:51` is
+    not a credential but can create noise in naive secret scanners.
+- Exact commands/results:
+  - current/history forbidden-name and >10 MiB scans -> none;
+  - public/source SHA256 recomputation -> `public-hash mismatches=0`,
+    `source-hash mismatches=0`;
+  - episode recount -> `episodes=60`, `success=19`, `unique_indices=60`, `step_cap=60`;
+  - formal absolute/private path scan -> none; formal secret-pattern scan -> none;
+  - `python -c` adversarial `assert_public_safe` probe -> all three generic absolute paths accepted;
+  - `scripts/validate_agent_state.py` before review -> exit 0,
+    `task=FPJ-033 stage=anti_pattern status=in_progress`.
+- Remaining risks and prohibited claims:
+  - three-seed variance is large and seed 2 cannot stand alone;
+  - public artifacts omit raw Zarr/checkpoints by design;
+  - no failure video, detached EMA target, paper simulator, 3000 epochs, 37 tasks or paper success
+    rate is supported;
+  - do not describe the cross-task table as a same-learning-rate/warmup ablation.
+- Recommended next role: quality
+
+## FPJ033-QUAL-01
+
+- Task: FPJ-033 harder MetaWorld task and full-channel limited-budget experiment
+- Role completed: quality
+- Result: passed with non-blocking P2/P3 findings; no P1/blocker; ready for gate
+- Owner: `/root/fpj033_quality`
+- Product files changed: none (read-only quality review)
+- Coordination files changed:
+  - `.agents/STATE.yaml`
+  - `.agents/HANDOFFS.md` (this append-only record)
+- Interface and public-usability checks:
+  - `README.md:23-69` provides a two-environment Linux/WSL quick start and passes the simulator
+    interpreter explicitly through `FLOWPOLICY_SIM_PYTHON` / `--sim-python`; it also states that
+    Zarr data and checkpoints are not included, so a fresh user is not led to expect hidden assets;
+  - `evidence/fpj033/preliminary/fresh_clone.json:1-31` records a clean shallow clone, wheel build,
+    package import, CLI help and artifact guard, while explicitly limiting the claim to packaging
+    rather than a clean OS/CUDA/EGL install;
+  - the formal bundle is linked from `README.md:129`, `docs/REPRODUCTION_PLAN.md:284`,
+    `docs/DEFENSE_GUIDE.md:147-148` and `docs/CLOUD_ALIYUN.md:92`; its summary, manifest, all three
+    seed records and all 60 episodes are directly readable from the repository candidate tree;
+  - trainer resume semantics are strong: `src/flowpolicy_jittor/training/trainer.py:384-468`
+    rejects schema, schedule, seed, policy and optimizer-layout mismatches before restoring state;
+    `scripts/train_smoke.py:339-357` additionally requires an epoch boundary and contiguous prior
+    epoch history. Existing resume tests cover planned stop/continuation and overwrite conflict.
+- Adversarial counterexamples constructed:
+  - sanitizer: `assert_public_safe` accepted synthetic `C:\\Users\\alice\\secret\\x.json`,
+    `C:/Users/alice/secret/x.json`, `/root/secret/x.json` and `/data/private/x.json`; the Windows
+    backslash pattern is also bypassed because the function scans JSON-escaped text;
+  - overwrite: building with `overwrite=True` into a directory containing
+    `stale-private.ckpt` succeeded, left that file in place and omitted it from `files_sha256`;
+  - partial output: deleting `hardware` from metadata caused a late `KeyError` after 13 public
+    JSON files had already been written, with no manifest to mark the directory incomplete;
+  - malformed seed: replacing `seed-0-rollout.json` with `{}` still produced a manifest; the
+    public seed record contained only sanitizer-added fields. A missing seed file is rejected
+    before payload writes (the created output directory remains empty), so missing-file behavior
+    itself is fail-closed;
+  - self-consistency: changing only aggregate success to 99% yielded a successful bundle whose
+    summary claimed 99% while the three public rollouts still contained 4, 5 and 10 successes;
+  - reuse: `experiments.train_cell` accepted a deliberately invalid existing `policy.ckpt` as
+    reused without opening it. Rollout will reject a corrupt file later, but a valid checkpoint
+    from a different data/training schedule can be silently relabeled because provenance is not
+    checked at reuse time.
+- Findings:
+  - P1: none. Independent verification already established that the current formal bundle is
+    internally correct, hash-consistent, free of private paths/secrets and contains all 60 episode
+    records; the counterexamples above concern future builder/reuse inputs, not this artifact.
+  - P2 (sanitizer): `scripts/build_evidence_bundle.py:15-22,117-121` recognizes only a few
+    path shapes and scans `json.dumps` output. It should reject generic absolute Windows/Unix paths
+    without being defeated by JSON escaping. `tests/test_evidence_bundle.py:47-52` covers only a
+    `/home/...` path and one secret shape.
+  - P2 (atomicity/overwrite): `scripts/build_evidence_bundle.py:196-198,220-256` does not clear an
+    overwritten directory and writes directly to the destination before summary/manifest validation.
+    A temporary-directory build plus atomic replace, or explicit stale-file removal and failure
+    cleanup, would prevent stale unmanifested files and plausible-looking partial bundles.
+  - P2 (schema/self-consistency): `scripts/build_evidence_bundle.py:203-223,231-256` requires the
+    three filenames but does not validate the seed payload schemas or recompute aggregate rates,
+    episode totals, seed identities and task/config consistency from those payloads. The manifest
+    therefore proves byte integrity, not semantic agreement.
+  - P2 (reuse provenance): `scripts/experiments.py:121-135` treats any existing checkpoint as
+    reusable without checking its summary, data fingerprint, task, seed or requested training
+    configuration. This is non-blocking for FPJ-033 because all formal cells record
+    `reused=false`, but future `--reuse` runs can be mislabeled.
+  - P2 (comparison interpretation): public prose calls the two full-channel tasks a matched-budget
+    difficulty comparison (`README.md:107-109`, `docs/REPRODUCTION_PLAN.md:248,285`,
+    `docs/DEFENSE_GUIDE.md:128`). It is not a strict task-only ablation: button used LR `1e-4` /
+    warmup `500`, whereas reach-wall used LR `1e-3` / warmup `20` (recorded in the preceding
+    verification handoff and reach-wall command evidence). Moreover,
+    `scripts/experiments.py:391-411` omits LR and warmup from the top-level report config even
+    though exact per-cell commands retain them. Keep saying “matched model and compute budget” and
+    disclose schedule differences wherever the success-rate difference is interpreted causally.
+  - P3 (count): `docs/CLOUD_ALIYUN.md:35` says five evidence layers, but lines 37-83 contain six.
+  - P3 (stale range): `docs/DEFENSE_GUIDE.md:134` says decisions D001-D018, while
+    `docs/DECISIONS.md:266` already contains D020.
+  - P3 (generic report label): `scripts/experiments.py:1,247` hardcodes FPJ-029 in the module/report
+    heading, so a new task's raw `SUMMARY.md` inherits an old task label. The formal FPJ-033 bundle
+    uses its own correct summary, so the current public result is not mislabeled.
+- Evidence and claim-boundary decision:
+  - current public manifest hashes and the aggregate `[4,5,10]` / 31.67% +/- 16.07% result remain
+    accepted from verification and anti-pattern review; this role found no counterexample in the
+    current artifact itself;
+  - three-seed variance, sampled (not allocator) peak memory, substitute simulator, excluded raw
+    datasets/checkpoints, absent failure video, non-bit-exact long-process resume and pending
+    detached EMA remain explicit limitations;
+  - do not claim paper reproduction, a 37-task/3000-epoch recipe, the 50% seed alone, or a
+    same-LR/warmup task-only ablation.
+- Gate actions:
+  - confirm the candidate commit includes the currently untracked `evidence/fpj033/formal/` and
+    all intended README/docs/script/test changes, then rerun final state/tree/secret checks before
+    commit and push;
+  - non-blocking P2/P3 items may be deferred to a follow-up task if the gate records them; none
+    requires rerunning the costly A10 experiment.
+- Exact quality commands/results:
+  - state validation on claim -> exit 0, `task=FPJ-033 stage=quality status=in_progress`;
+  - sanitizer probes -> four generic absolute forms accepted, `/home/...` and `/mnt/workspace/...`
+    rejected;
+  - overwrite probe -> `stale_exists=True`, `stale_manifested=False`, 16 files total;
+  - late-failure probe -> `KeyError('hardware')`, 13 files left, no summary/manifest;
+  - aggregate/rollout mismatch probe -> builder succeeded, summary claimed 99%, rollout success
+    counts remained `[4,5,10]`;
+  - malformed/missing-seed probes -> `{}` rollout accepted into a manifest; missing seed rejected
+    with `FileNotFoundError` before payload writes;
+  - reuse probe -> invalid checkpoint returned immediately as `reused=True`.
+- Recommended next role: gate
+
+
+## FPJ033-GATE-01
+
+- Task: FPJ-033, gate, attempt 1
+- Decision: PASS. All eight acceptance items pass and no implementation, verification,
+  anti-pattern or quality handoff contains an unresolved P1/blocker.
+- Role evidence reviewed in full:
+  - implementation: `FPJ033-IMPL-01`
+  - verification: `FPJ033-VERIFY-01`
+  - anti-pattern: `FPJ033-AP-01`
+  - quality: `FPJ033-QUAL-01`
+- Product files changed by gate: none.
+- Coordination files changed by gate:
+  - `.agents/STATE.yaml`
+  - `.agents/QUEUE.md`
+  - `.agents/HANDOFFS.md` (this append-only record)
+- Independent acceptance decisions:
+  1. PASS — `expert_probe.json` records 10/10 `reach-wall-v3` variants successful,
+     first-success steps 34–50 (mean 43.6), expert success rate 1.0 and
+     `suitable_for_collection=true`, with no silent task substitution.
+  2. PASS — the deterministic reach-wall Zarr record contains 20 episodes / 2400 steps and
+     five required arrays; implementation and verification confirmed the prior `reach-v3` and
+     `button-press-wall-v3` datasets were not modified.
+  3. PASS — periodic checkpoints and the CLI resume path are implemented and covered by tests;
+     preliminary training completed four epochs with `resumed=true`, while the documented
+     long-process numerical tolerance remains in force rather than being called bit-exact.
+  4. PASS — local low-budget train/rollout smoke completed; rollout records five episodes,
+     one success and explicit termination/failure outcomes rather than suppressing failures.
+  5. PASS — formal A10 evidence records full channels 512/1024/2048, 255,138,308 trainable
+     parameters, batch 64, 30 epochs / 1050 updates per seed, seeds 0/1/2 and 20 episodes per
+     seed. Independent recomputation gives 4/20, 5/20 and 10/20, mean 31.6667%, sample standard
+     deviation 16.0728%, 60 unique episode indices, 19 successes, all 60 `step_cap`, mean policy
+     latency 3.7751192 ms and sampled peak GPU memory 10605 MiB.
+  6. PASS — `evidence/fpj033/formal/` contains exactly 15 public files; public manifest hashes
+     and referenced source hashes have zero failures. Broad scans found no secret/private absolute
+     path, raw dataset or checkpoint. The dataset logical SHA-256 is
+     `1552bf53f994840b4cbb81ad6ce39584bb0923ed4b3b8601096481c2a0b7daae` and the archive SHA-256
+     is `f5826982ff24cc9d22018306fe3fbaaede239047464b610a4dd94c150aef45bb`.
+  7. PASS — README gives a Linux/WSL fresh-machine quick start, makes the separate simulator
+     interpreter explicit via `FLOWPOLICY_SIM_PYTHON` / `--sim-python`, and discloses excluded
+     data/checkpoints. The fresh-clone packaging/import/CLI/artifact-guard record passes and is
+     correctly bounded as not proving a clean OS/CUDA/EGL installation.
+  8. PASS — the comparison is labeled full-channel limited-budget, not a paper result, and matches
+     model channels, 1024 points, batch/epoch/update budget, three seeds and 20 episodes. It is not
+     a strict task-only ablation because button used LR `1e-4` / warmup 500 while reach-wall used
+     LR `1e-3` / warmup 20; this schedule difference remains an explicit interpretation boundary.
+- Exact final baseline rerun:
+  - command: `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q`
+  - exit code: 0
+  - result: `227 passed, 1 skipped, 32 warnings in 163.53s (0:02:43)`
+  - skipped separately: `tests/test_conv1d_parity.py:12`, because the core Jittor environment
+    does not install PyTorch; it is not counted among the 227 passes.
+- Independent repository/evidence checks:
+  - formal bundle: 15 public files, zero public-hash failures, zero source-hash failures;
+  - aggregate/episode recomputation: rates 0.20/0.25/0.50, mean 0.31666666666666665,
+    sample std 0.16072751268321592, 60/60 unique episode indices, 19 successes;
+  - candidate tree: all 15 formal evidence files are currently untracked, not ignored, and were
+    included in the candidate scan; 90 candidate tracked/untracked files, zero forbidden artifact
+    paths, zero files over 10 MiB;
+  - broad private-path/secret scan: no match in the formal bundle;
+  - `git diff --check`: exit 0 (line-ending warnings only).
+- Nonblocking findings accepted for follow-up rather than a costly rerun:
+  - P2: the evidence sanitizer misses several generic absolute path forms; overwrite can retain an
+    unmanifested stale file; late failure can leave a partial bundle; payload schemas/aggregate
+    self-consistency are not fully enforced; experiment `--reuse` does not verify provenance.
+    None affected the independently rehashed and rescanned FPJ-033 formal bundle.
+  - P2: cross-task prose must continue saying matched model/compute budget, not identical
+    hyperparameters or a causal task-only ablation.
+  - P3: `docs/CLOUD_ALIYUN.md` says five evidence layers while listing six;
+    `docs/DEFENSE_GUIDE.md` names D001–D018 although decisions reach D020; the generic experiment
+    report heading still says FPJ-029; a dummy token-shaped test fixture can trigger naive scans.
+- Remaining risks and prohibited claims:
+  - the 20%/25%/50% seed spread is substantial; 50% cannot be presented alone;
+  - 10605 MiB is an external sampled peak, not allocator-instrumented; public evidence excludes
+    raw Zarr/checkpoints; no failure video exists; the modern simulator is a substitute stack;
+  - do not claim paper success-rate reproduction, 3000 epochs / 37 tasks, identical learning
+    schedules, bit-exact long-process resume, or a detached EMA loss target.
+- State transition:
+  - FPJ-033 marked complete in `.agents/QUEUE.md`;
+  - baseline updated from `213 passed, 1 skipped` to `227 passed, 1 skipped`;
+  - FPJ-034 activated at `implementation/ready` with fresh role handoffs, detached-target scope,
+    checkpoint/resume/gradient-isolation/resource acceptance and no cloud-spend authority.
+- Recommended next role: FPJ-034 implementation
 
 

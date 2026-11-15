@@ -51,8 +51,8 @@ L = mean(||f_t-f_r||²) + α mean(mask · ||v_t-v_r||²)
 
 - 当前已完成的 Jittor 部分：PointNet、状态编码器、Conditional U-Net、归一化器、CFM loss、顶层 policy、Zarr 数据集、训练器、AdamW、EMA 状态、policy/trainer checkpoint 和单步动作推理。
 - checkpoint 不只校验权重 shape，还固定本实现版本、Jittor 版本、网络、loss、NFE 和动作切片配置；保存前会从真实运行对象重建配置，加载失败会回滚，防止同一权重在 `code`/`exact` 模式下静默执行 3/4 步。
-- 已完成：真实示范训练、checkpoint 恢复、5-episode 管线 smoke、2 任务 × 3 seeds × 20 episodes 的低预算闭环评测，以及完整通道 A10 三 seed 有限预算训练与评测。
-- 尚未完成：论文 3000 epochs 长训练、第二个任务的完整通道实验、论文式 detached EMA target，以及成功/失败视频整理。不能把 30 epochs 的单任务结果表述成完整论文配方复现。
+- 已完成：真实示范训练、checkpoint 恢复、5-episode 管线 smoke、2 任务 × 3 seeds × 20 episodes 的 CPU 低预算闭环评测，以及两个任务的完整通道 A10 三 seed 有限预算训练与评测。
+- 尚未完成：论文 3000 epochs 长训练、论文式 detached EMA target，以及成功/失败视频整理。不能把 30 epochs、现代替代仿真栈的结果表述成完整论文配方复现。
 - 非 Jittor：MuJoCo 物理引擎、MetaWorld 环境、官方专家策略、Zarr 文件读写。
 - 点云 FPS 使用 NumPy 实现；训练与仿真链路不依赖 PyTorch。PyTorch 只在隔离的 parity-env 中作为数值参照，不能把这项对照混入 Jittor 训练图。
 
@@ -123,17 +123,19 @@ Jittor 闭环可运行和任务难度差异，不能与论文成功率直接比�
 | 任务 | 评测设置 | 成功率 | 平均策略延迟 | 峰值显存 |
 |---|---:|---:|---:|---:|
 | `button-press-wall-v3` | 完整通道，30 epochs，3 seeds × 20 episodes | 100% ± 0% | 3.811 ± 0.016 ms | 10726 MiB |
+| `reach-wall-v3` | 完整通道，30 epochs，3 seeds × 20 episodes | 31.67% ± 16.07% | 3.775 ms | 10605 MiB（采样） |
 
-口头说明要紧跟一句：这是替代仿真栈上的单任务天花板结果，证明完整 Jittor 网络可以训练和闭环运行，
-不等于论文 37 个任务、3000 epochs 或真实机械臂结果。60 个 episode 的成功步数范围为 107–152，
-可以用来说明“成功率相同不代表所有轨迹质量相同”。
+口头说明要紧跟一句：这是替代仿真栈上的匹配预算对照，证明完整 Jittor 网络可以训练和闭环运行，
+不等于论文 37 个任务、3000 epochs 或真实机械臂结果。容易任务的满分说明天花板效应；困难任务
+三个 seed 为 20%/25%/50%，说明少量示范和短训练下方差明显，不能只展示最好 seed。
 
 **已经完成（可当场打开文件核对）**
 
 - 论文与官方代码审计、任务选择与环境边界（D001–D018）；
 - Jittor CPU 环境与逐模块测试：1D 算子、时间嵌入、Conditional U-Net（FiLM）、
   PointNet、状态编码器、limits 归一化、公开代码口径 CFM loss、顶层 policy、NFE=1 推理；
-- 真实示范：`data/reach-v3.zarr`（10×120）、`data/button-press-wall-v3.zarr`（20×120）；
+- 真实示范：`data/reach-v3.zarr`（10×120）、`data/button-press-wall-v3.zarr` 和
+  `data/reach-wall-v3.zarr`（各 20×120）；
 - 训练与闭环：`scripts/train_smoke.py` + `scripts/rollout.py`（跨环境进程桥），
   带配置指纹的 checkpoint、trainer checkpoint（AdamW 矩 + EMA）；
 - EMA：`EmaModel` 逐步更新、存进 trainer checkpoint、恢复时双向校验（D018）；
@@ -141,8 +143,9 @@ Jittor 闭环可运行和任务难度差异，不能与论文成功率直接比�
   170 项检查、最差偏差 1.6e-09（`outputs/parity/parity.json`）；
 - 全通道（512/1024/2048）CPU 单步前反向：2.55 亿参数、约 4 s/step、峰值 4.5 GB；
 - 云端 A10 CUDA 证据：真实 `reach-v3` 数据完成 34 次参数更新并保存 checkpoint；
-  完整通道模型在 1024 点、batch 1 下完成资源探测，随后以 batch 64、30 epochs、3 seeds
-  各训练 1050 步并完成共 60 个闭环 episode，峰值显存 10726 MiB；
+  完整通道模型在 1024 点下完成资源探测，随后两个任务都以 batch 64、30 epochs、3 seeds
+  各训练 1050 步并分别完成 60 个闭环 episode；`reach-wall-v3` 的公开证据在
+  `evidence/fpj033/formal/`，包含三组训练曲线与全部 episode；
 - 无机械臂云端仿真：EGL 生成 RGB、1024 点点云和 9 维状态，脚本专家可成功，
   checkpoint 与 Meta-World 的进程桥完成 60 步闭环；
 - 低预算实验网格：两个任务 × 3 seeds × 20 episodes，一条命令复跑（`scripts/experiments.py`）。
@@ -151,7 +154,7 @@ Jittor 闭环可运行和任务难度差异，不能与论文成功率直接比�
 
 - **本机 CUDA 仍未配置，但云端 A10 已验证**：本机 RTX 5060 缺少适配 Blackwell 的 toolkit；
   云端 A10 使用 CUDA 12.1。CPU 实验表仍然是 CPU 结果，不能因为云端可用就改写其来源；
-- **完整通道 GPU 训练已完成有限预算试验，但不是论文完整配方**：只有一个任务和 30 epochs，
+- **完整通道 GPU 训练已完成两个任务的有限预算试验，但不是论文完整配方**：每个任务只有 30 epochs，
   未跑论文 3000 epochs，也未启用 detached EMA target；
 - **EMA 没有作为损失目标**：loss 里 `v_r` 仍由当前模型给出（`target_mode="code"`，与 released 代码一致）；
   论文式 detached 目标未实现，原因写在 D018；

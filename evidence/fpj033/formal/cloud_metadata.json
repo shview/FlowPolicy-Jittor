@@ -1,0 +1,54 @@
+{
+  "budget": {
+    "batch_size": 64,
+    "down_dims": [
+      512,
+      1024,
+      2048
+    ],
+    "epochs_per_seed": 30,
+    "max_steps_per_episode": 200,
+    "nfe": 1,
+    "num_points": 1024,
+    "rollout_episodes_per_seed": 20,
+    "seeds": [
+      0,
+      1,
+      2
+    ],
+    "task": "reach-wall-v3",
+    "updates_per_seed": 1050
+  },
+  "claim_boundary": "Full-channel limited-budget Jittor run in a documented substitute simulator; not the paper's 3000-epoch, 37-task recipe or reported success rate.",
+  "console_service_time_at_stop": "4 hours 35 minutes",
+  "git_commit_used_for_run": "929769aa8bdcff587d6bcf6c0689a499ff124918",
+  "hardware": {
+    "cpu_cores": 8,
+    "driver": "570.211.01",
+    "gpu": "NVIDIA A10",
+    "gpu_count": 1,
+    "gpu_memory_mib": 23028,
+    "ram_gib": 30
+  },
+  "instance_state_after_run": "stopped",
+  "instance_stopped_utc": "2026-11-15T12:25:00Z",
+  "measurements": {
+    "dataset_archive_sha256": "f5826982ff24cc9d22018306fe3fbaaede239047464b610a4dd94c150aef45bb",
+    "dataset_logical_content_sha256": "1552bf53f994840b4cbb81ad6ce39584bb0923ed4b3b8601096481c2a0b7daae",
+    "sampled_peak_gpu_memory_method": "nvidia-smi sampling during formal training; not an allocator-instrumented maximum",
+    "sampled_peak_gpu_memory_mib": 10605
+  },
+  "platform": "Alibaba Cloud PAI-DSW",
+  "region": "cn-shanghai",
+  "run_completion_first_observed_utc": "2026-11-15T12:21:00Z",
+  "run_started_utc": "2026-11-15T10:43:35Z",
+  "schema_version": 1,
+  "software": {
+    "cuda": "12.1.105",
+    "jittor": "1.3.11.0",
+    "metaworld": "3.0.0",
+    "mujoco": "3.3.7",
+    "python": "3.11.11"
+  },
+  "stopped_system_disk_retention_days": 15
+}

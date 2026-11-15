@@ -11,11 +11,12 @@
 | CPU / 内存 | 8 vCPU / 30 GiB |
 | 系统盘 | 100 GiB |
 | 项目 | `/mnt/workspace/projects/flowpolicy-jittor` |
+| FPJ-033 固定 commit checkout | `/mnt/workspace/projects/flowpolicy-jittor-fpj033`（commit `929769a`） |
 | Jittor venv | `/mnt/workspace/venvs/flowpolicy` |
 | 仿真 venv | `/mnt/workspace/venvs/flowpolicy-sim` |
 | JIT 缓存 | `/mnt/workspace/.cache/jittor` |
 | 日志 | `/mnt/workspace/logs` |
-| 最终停机状态 | 2026-11-15 16:23 已手动停止，控制台记录累计服务时长约 2 小时 39 分钟 |
+| 最终停机状态 | 2026-11-15 20:25 已手动停止，控制台记录累计服务时长约 4 小时 35 分钟 |
 
 训练环境使用 Jittor 1.3.11.0、NumPy 1.26.4、Zarr 2.18.7；仿真环境使用 MuJoCo 3.3.7、Meta-World 3.0.0 和 Gymnasium 1.4.0。两个环境通过 JSON 行和 NumPy 数组交互，仿真依赖没有进入 Jittor 训练图。
 
@@ -79,11 +80,22 @@ MUJOCO_GL=egl /mnt/workspace/venvs/flowpolicy-sim/bin/python scripts/sim_server.
    - NFE=1，三个 seed 的策略推理均值为 3.811 ± 0.016 ms；
    - 三组共 60 个 episode，成功步数 107–152，存在天花板效应。
 
+6. 更难任务的匹配预算试验：
+
+   - `reach-wall-v3` 先通过 10/10 专家变体门槛并采集 20 条 × 120 步的确定性示范；
+   - 使用与第 5 项相同的完整通道、1024 点、batch 64、30 epochs、seeds 0/1/2 和
+     每 seed 20 个闭环 episode；
+   - 每个 seed 1050 updates，最后训练/验证 loss 和 checkpoint SHA256 均已保存；
+   - 结果为 4/20、5/20、10/20，即 **31.67% ± 16.07%**，平均策略延迟 3.775 ms；
+   - 外部 `nvidia-smi` 采样峰值 10605 MiB；60 个 episode 均保留逐回合成功步数、延迟和
+     `done_reason=step_cap`；
+   - 公开脱敏证据位于 `evidence/fpj033/formal/`，不含数据集、checkpoint、私有路径或密钥。
+
 ## 证据边界
 
 - CUDA、真实数据更新和完整通道单步现在可以声称“已验证”。
-- 可以声称完成“论文网络结构的三 seed 有限预算训练”，但不能声称完成论文 3000 epochs、37 任务配方；
-  当前只有一个任务、30 epochs，且未启用 detached EMA target。
+- 可以声称完成“两个任务的论文网络结构三 seed 有限预算训练”，但不能声称完成论文 3000 epochs、
+  37 任务配方；每个任务只有 30 epochs，且未启用 detached EMA target。
 - 不能用一次 1-epoch rollout 计算成功率。
 - Meta-World 3.0 / MuJoCo 3.3.7 是替代仿真栈，不能声称与论文的 v2/mujoco-py 像素级一致。
 - 本机 RTX 5060 的 CUDA 要求与云端 A10 不同：本机 Blackwell 需要较新的 toolkit；A10 已在 CUDA 12.1 上通过，不应再写成所有 GPU 都必须 CUDA 12.8。
@@ -93,6 +105,7 @@ MUJOCO_GL=egl /mnt/workspace/venvs/flowpolicy-sim/bin/python scripts/sim_server.
 当前 A10 公共资源每小时消耗约 6.991 计算时。本轮先做显存/吞吐探测，再执行 3 seeds × 30 epochs ×
 20 episodes；训练和 rollout 串行，完成证据下载后立即停止实例。
 
-本轮设置了定时关机作为兜底，并在 2026-11-15 16:23 确认手动停止。控制台提示：免费云盘会保存环境，
-但停止后 15 天内如果没有再次启动，云盘环境将被释放。因此如需补第二任务，应在 15 天内启动，
-或从本地保存的代码、JSON、日志和截图恢复。三个 checkpoint 的 SHA256 和逐回合结果已经本地保存。
+本轮设置了定时关机作为兜底，并在 2026-11-15 20:25 确认手动停止。控制台提示：免费云盘会保存环境，
+但停止后 15 天内如果没有再次启动，云盘环境将被释放。第二个任务已完成；后续如需做 detached EMA
+对照，应在保留期内启动，或从 GitHub 代码和本地证据恢复。六个最终 policy/trainer checkpoint 的
+SHA256、训练曲线和 120 个逐回合结果均已保存，checkpoint 本体不进入公开仓库。

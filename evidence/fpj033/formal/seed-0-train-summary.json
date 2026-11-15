@@ -1,0 +1,120 @@
+{
+  "batch_size": 64,
+  "checkpoint": "policy.ckpt",
+  "checkpoint_sha256": "e8eac82ea3bf28be9f1d3b9cf5a40b4905fdca134733b83a9cd51eb06dfce96e",
+  "completed_epochs": 30,
+  "config": {
+    "down_dims": [
+      512,
+      1024,
+      2048
+    ],
+    "embed_dim": 128,
+    "encoder_out": 64,
+    "kernel_size": 5,
+    "lr": 0.001,
+    "n_groups": 8,
+    "num_points": 1024,
+    "pointnet_out": 64,
+    "seed": 0,
+    "val_ratio": 0.02,
+    "var_fc_hidden_dim": 512,
+    "warmup": 20
+  },
+  "config_sha256": "2e1035677dab1a1c42d5b29536dde4350a30311dca6ae32d6c179fea5107ddbc",
+  "data": "reach-wall-v3.zarr",
+  "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+  "device": "cuda",
+  "ema": {
+    "decay": null,
+    "effective_decay": null,
+    "enabled": false,
+    "note": "EMA weights are the target for the flow-matching update in the paper; this run keeps them in the trainer checkpoint only and evaluates the online policy",
+    "optimization_step": null,
+    "trainer_checkpoint": "trainer.ckpt",
+    "warmup_steps": 0
+  },
+  "epochs": 30,
+  "evidence_status": "A10 full-channel 30-epoch training cell; not a paper-scale run",
+  "loss": {
+    "first": 0.00015315087512135506,
+    "last_epoch_mean": 0.00011245145703599389,
+    "min": 9.234134631697088e-05,
+    "val": 0.00010506824037292972
+  },
+  "note": "paper-architecture CUDA pilot; reduced batch/epochs and replacement simulator, NOT the paper training recipe",
+  "paper_architecture": true,
+  "prohibited_claims": [
+    "paper architecture does not make this the paper training recipe; the batch, epochs, data and simulator remain reduced/substituted",
+    "with --ema-decay EMA weights are tracked but not used as the loss target",
+    "no success rate is implied by the training loss"
+  ],
+  "resume": {
+    "checkpoint_every": 5,
+    "checkpoints_written_this_invocation": [
+      {
+        "epoch": 5,
+        "global_step": 175,
+        "path": "epoch-0005.ckpt",
+        "sha256": "650feec88576417e1b19b3198ea7edf4d328aad33fd16ab7001ab73db13ade73"
+      },
+      {
+        "epoch": 10,
+        "global_step": 350,
+        "path": "epoch-0010.ckpt",
+        "sha256": "511a14368701d92b029bf40671efcdc1abd6a126ff3b56fbd3026d05ec7970ab"
+      },
+      {
+        "epoch": 15,
+        "global_step": 525,
+        "path": "epoch-0015.ckpt",
+        "sha256": "f12adde69bd1ce6d16bf965209ec9f66694f721ed92c23f3c6466935a651f122"
+      },
+      {
+        "epoch": 20,
+        "global_step": 700,
+        "path": "epoch-0020.ckpt",
+        "sha256": "37a9ee84af1d26524c18f26bb6644c0972707833551184bea8309a52e41eceb9"
+      },
+      {
+        "epoch": 25,
+        "global_step": 875,
+        "path": "epoch-0025.ckpt",
+        "sha256": "055baeef26eef4cb395c358cb2ce71d2c5251ff02e84be02fa9914d0f3e36f30"
+      },
+      {
+        "epoch": 30,
+        "global_step": 1050,
+        "path": "epoch-0030.ckpt",
+        "sha256": "355ec36d63300197e7fede3227100d317191d7f865f4c909125c8be42b312169"
+      }
+    ],
+    "claim_boundary": "State and schedule restore exactly; prior measurements allow up to 1e-2 long-process parameter drift, so bit-exact resume is not claimed.",
+    "resumed": false,
+    "resumed_from": null,
+    "start_epoch": 0
+  },
+  "run_label": "fpj033-reach-wall-full-channels-limited-budget",
+  "runtime": {
+    "cpu_count": 8,
+    "device": "cuda",
+    "jittor": "1.3.11.0",
+    "nvidia_smi": "NVIDIA A10, 570.211.01, 23028",
+    "nvidia_smi_error": null,
+    "omp_num_threads": "4",
+    "platform": "Linux-5.10.134-18.0.13.lifsea8.x86_64-x86_64-with-glibc2.35",
+    "python": "3.11.11"
+  },
+  "seconds_per_step": 0.9704469777371428,
+  "seconds_per_step_this_invocation": 0.9704469777371428,
+  "steps_per_epoch": 35,
+  "steps_this_invocation": 1050,
+  "total_steps": 1050,
+  "train_windows": 2299,
+  "trainable_parameters": 255138308,
+  "trainer_checkpoint": "trainer.ckpt",
+  "trainer_checkpoint_sha256": "355ec36d63300197e7fede3227100d317191d7f865f4c909125c8be42b312169",
+  "val_windows": 121,
+  "wall_seconds": 1018.969326624,
+  "wall_seconds_this_invocation": 1018.969326624
+}

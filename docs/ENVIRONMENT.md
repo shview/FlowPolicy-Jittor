@@ -77,10 +77,10 @@ PAI-DSW 公共资源实例已经补上本机缺失的 CUDA 证据：NVIDIA A10 2
 实际执行 CUDA kernel 并通过；完整 `512/1024/2048` 通道在 1024 点、batch 1 下完成一次
 forward/backward/update，峰值显存约 8.3 GiB。
 
-在资源探测之后，完整通道模型又以 batch 64、30 epochs、1050 updates 完成 3 个独立训练 seed。
-每个 seed 约 688 秒，外部监控峰值 10726 MiB；三个最后 epoch mean loss 的均值为
-`6.819e-6`。这是论文网络结构的有限预算试验，仍不同于论文 3000 epochs、旧仿真栈和
-detached EMA target 配方。
+在资源探测之后，完整通道模型以 batch 64、30 epochs、1050 updates/seed 分别完成
+`button-press-wall-v3` 和 `reach-wall-v3` 的 3 个独立训练 seed。容易任务为 100% ± 0%，
+困难任务为 31.67% ± 16.07%；外部监控采样峰值分别为 10726 MiB 和 10605 MiB。
+这是论文网络结构的有限预算试验，仍不同于论文 3000 epochs、旧仿真栈和 detached EMA target 配方。
 
 云端仍保持训练与仿真隔离：`/mnt/workspace/venvs/flowpolicy` 只放 Jittor 训练依赖，
 `/mnt/workspace/venvs/flowpolicy-sim` 放 MuJoCo 3.3.7、Meta-World 3.0.0 和 Gymnasium 1.4.0。

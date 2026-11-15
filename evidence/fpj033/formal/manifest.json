@@ -1,0 +1,47 @@
+{
+  "bundle_status": "formal A10 full-channel limited-budget experiment complete",
+  "claim_boundary": "Three seeds and sixty episodes are complete for a full-channel, 30-epoch A10 run in the substitute simulator. This is not the paper's 3000-epoch recipe or its reported success rate.",
+  "excluded": [
+    "raw Zarr demonstrations",
+    "policy/trainer checkpoints",
+    "private absolute paths",
+    "cloud credentials and secrets"
+  ],
+  "files_sha256": {
+    "SUMMARY.md": "9677159e08c313e7ff8359382757ca5fcee937fc9887ba48bd0846230d50e5e9",
+    "cloud_metadata.json": "edec2f52465bf8fc88c71704e421725d9b5d79bde08f923c1e295837764e86f7",
+    "dataset_fingerprint.json": "aafa84a165e3316936ed8cf45706bb52f5166f72fe3775652d5aa675f85c5b98",
+    "experiments.json": "39d7418927b1e952bd4778b6ab245c9f72bc2adfcfcdeb89461456dd7fbec163",
+    "preflight.json": "bde0d939c15ba2684f97564cc037aa9f07ae98b24aebc2a0ea4d04c42c3e47e7",
+    "seed-0-epochs.json": "f5bac45150452e216b5b7840951a02d6d63c8d4ff0e5da618ac3b551773ba5ec",
+    "seed-0-rollout.json": "9c42cc3cd3158c9c155d5dc1597b59e55aee7aaec4bd7006518362d5932a1c04",
+    "seed-0-train-summary.json": "2ef3d87453a155c1d30069f888db5b353bc90506814367d2198fd8a36891d3db",
+    "seed-1-epochs.json": "7c57acb1cabde076ae51780507296541293430b6b134a9d9e3d581290dde85d8",
+    "seed-1-rollout.json": "7895610878943f8fb4a9531d1f1df2a9df7a2f7d36b8244e5fcb1c9e3ce40b78",
+    "seed-1-train-summary.json": "e67a452b43832a1d1d9b5ebc0ca477d47d5633a10a3e37264d6d4365b99f3508",
+    "seed-2-epochs.json": "b24995054d878fd717922723e7b287963def9ccf1ea052c544929ce372a1a125",
+    "seed-2-rollout.json": "e9805fb5f3f235c51d55e951e08424d545189a2aa515abcb29a1ea40a684f21b",
+    "seed-2-train-summary.json": "6b3cdcaa910bd31bb5fd5702a6c06f4a5099b860777d7a47ede9454905699a3b"
+  },
+  "git_commit_at_generation": "929769aa8bdcff587d6bcf6c0689a499ff124918",
+  "git_commit_used_for_run": "929769aa8bdcff587d6bcf6c0689a499ff124918",
+  "schema_version": 1,
+  "source_files_sha256": {
+    "SUMMARY.md": "590a1738afff4a40488ad8ae09560334946d83cc4aa5ad5fc021887294843999",
+    "cloud-metadata.json": "876d7a078ddfcc602f57bb0902f488bb5a04b528a190cd77235ce38c843d9986",
+    "dataset-fingerprint-cloud.json": "ec1142df8a2ebff890687fd1987295bb0c84a8f4b0b339d2f7c8ce5e84ec5cbe",
+    "experiments.json": "52d16aec00e2ed8698376945408d38c2537c4dd949cfce9e6d73faf64ac4a04f",
+    "formal.log": "acfea2fe0a157701c965a69e3248e92617c5c5f9008120d8e773b674367d6af6",
+    "preflight.json": "680473e3f66463b2acfa95ef86959f8810220d34b43be652f504d714c75efffa",
+    "seed-0-epochs.json": "993b14e3d45f99c2197293c22af0457a48c1ca5f0389bdf839715f6255f4b65f",
+    "seed-0-rollout.json": "563fc6ae7306352cb1d3ab2afa392a60ce3e49c007d422fb009ab1b70b373f83",
+    "seed-0-train-summary.json": "716b46948828abbd88ed8381a715987a7073db05859f9af5950d9f310ccfbf8d",
+    "seed-1-epochs.json": "acffaba27232ab40d4bed012b815e8f9eb29a61516cb2c835687caf6c30b8a4d",
+    "seed-1-rollout.json": "b5dc147f4d1cd7fb8ab12ce93b0c1cafa79ab60f8eca4e783ea880766040d2f2",
+    "seed-1-train-summary.json": "d61c1008d75078cf161430a6e550ca26d3df9109a284cdf7def0441337965621",
+    "seed-2-epochs.json": "41278ce399fea48cd67d6278674431c36bc1dc0bc118152529f924efa0442b41",
+    "seed-2-rollout.json": "55cd6ba75197218fe4981b4f6b89d9ab965ef51051b1755ccfd83f4c1e63b297",
+    "seed-2-train-summary.json": "54351454c760b78e76932323e53918ab5b8a4bdfd93cc5d6143fb773746705fc"
+  },
+  "task": "reach-wall-v3"
+}

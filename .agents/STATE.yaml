@@ -6,7 +6,7 @@ project:
   name: flowpolicy-jittor
   version: "0.1.0"
   upstream_commit: "86d10c14972b4eab083abec9026749c340f8e5ed"
-  git_status: "published from main to https://github.com/shview/FlowPolicy-Jittor; datasets, outputs and checkpoints remain local"
+  git_status: "FPJ-033 gate-approved source/docs/tests and 15 public evidence files are the current main-line publication candidate; datasets, raw outputs and checkpoints remain local"
 
 environment:
   platform: "WSL2 Ubuntu"
@@ -23,24 +23,24 @@ environment:
   cloud_cuda: "12.1.105"
   cloud_cuda_verified: true
   cloud_simulator_ready: true
-  cloud_instance_state: "stopped manually on 2026-11-15 16:23 after the console reported about 2h39m cumulative service; free system disk retention is 15 days while stopped"
+  cloud_instance_state: "stopped manually on 2026-11-15 20:25 after the console reported about 4h35m cumulative service; free system disk retention is 15 days while stopped"
 
 baseline:
   command: "wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q"
-  result: "213 passed, 1 skipped"
+  result: "227 passed, 1 skipped"
   skipped:
     - test: "tests/test_conv1d_parity.py"
       reason: "The core Jittor environment does not install PyTorch; conv1d/Autograd parity is now also measured end to end by scripts/parity_check.py in the separate parity-env."
-  note: "Do not count the skipped PyTorch parity module as passed. The previously intermittent test_top_level_adamw_updates_active_but_not_frozen_parameters was hardened in FPJ-030 (explicit seed, measured assertion) and passed 20/20 single runs plus 3/3 whole-file runs; the original failure was never reproduced, so no root cause is claimed."
+  note: "FPJ-033 gate reran the exact command: 227 passed, 1 skipped, 32 warnings in 163.53s. Do not count the skipped PyTorch parity module as passed. The previously intermittent test_top_level_adamw_updates_active_but_not_frozen_parameters was hardened in FPJ-030 (explicit seed, measured assertion) and passed 20/20 single runs plus 3/3 whole-file runs; the original failure was never reproduced, so no root cause is claimed."
 
 current:
-  task_id: FPJ-033
-  title: "Harder MetaWorld task and full-channel limited-budget experiment"
+  task_id: FPJ-034
+  title: "Detached EMA target for the paper-described loss"
   attempt: 1
   stage: implementation
-  status: in_progress
-  owner: /root
-  last_handoff_id: FPJ032-GATE-01
+  status: ready
+  owner: null
+  last_handoff_id: FPJ033-GATE-01
   next_stage: verification
   role_handoffs:
     implementation: null
@@ -49,22 +49,19 @@ current:
     quality: null
     gate: null
   objective: >-
-    Add a harder MetaWorld task, preferably reach-wall-v3 after a multi-variant expert-quality
-    gate, then run a reproducible three-seed full-channel limited-budget comparison only after
-    local data, smoke, periodic-checkpoint and resume checks pass. Publish a sanitized evidence
-    bundle and portable fresh-machine instructions without claiming the paper recipe.
+    Implement a true detached EMA target policy for the paper-described v_r loss target while
+    retaining the released-code target mode as the default and preserving explicit checkpoint,
+    resume and resource semantics. Verify gradient isolation and EMA-only updates on a small CPU
+    configuration before any later target-mode experiment.
   scope:
     allowed_paths:
-      - .gitignore
-      - pyproject.toml
       - README.md
       - docs/**
       - scripts/**
       - src/**
       - tests/**
-      - evidence/**
-      - data/reach-wall-v3.zarr/**
-      - outputs/fpj033/**
+      - outputs/fpj034/**
+      - evidence/fpj034/**
       - .agents/STATE.yaml
       - .agents/HANDOFFS.md
       - .agents/QUEUE.md
@@ -72,33 +69,33 @@ current:
       - ../flowpolicy-upstream/**
       - data/reach-v3.zarr/**
       - data/button-press-wall-v3.zarr/**
+      - data/reach-wall-v3.zarr/**
+      - evidence/fpj033/**
   acceptance:
-    - "Probe reach-wall-v3 over at least 10 task variants and record expert success, first-success steps and suitability before collecting formal demonstrations; do not silently substitute another task."
-    - "Create and validate deterministic reach-wall-v3 Zarr demonstrations without modifying the two existing formal datasets."
-    - "Add periodic trainer checkpoints and a tested CLI resume path before any costly cloud training; retain the documented long-process numerical tolerance instead of claiming bit-exact resume."
-    - "Complete a local low-budget train/rollout smoke with explicit failure reporting before the full-channel run."
-    - "If cloud execution proceeds, use the full 512/1024/2048 configuration, 3 training seeds and 20 rollout episodes per seed, recording hardware, budget, hashes, losses, latency, memory and every episode."
-    - "Publish a sanitized evidence bundle containing summaries/manifests/hashes and episode results but no dataset, checkpoint, secret or private absolute path."
-    - "README provides a fresh-machine quick start and portable explicit simulator interpreter commands; a fresh-clone check is recorded."
-    - "Any comparison with button-press-wall-v3 uses matched point count, model, seed count and budget, and is labeled full-channel limited-budget rather than the paper result."
+    - "Add an explicit detached-EMA target mode in which v_r is computed by a target policy that is a separate model/state from the online policy; target_mode='code' remains behaviorally unchanged and stays the default."
+    - "Define and test target initialization and update ordering; target parameters receive no optimizer gradient, are excluded from online trainable parameters and change only through the documented EMA update."
+    - "Trainer checkpoint save/load validates and restores the online policy, optimizer/scheduler state, EMA target state and update counters; resume is covered, and legacy/incompatible checkpoints are either supported explicitly or rejected clearly rather than silently changing target semantics."
+    - "Small CPU configurations cover shape and finite-value behavior, gradient isolation, EMA numerical updates, checkpoint round-trip and continuation; failures report actionable configuration/state mismatches."
+    - "Measure the detached-target CPU memory/time overhead on a documented small configuration before considering a full-channel run; no cloud spend or formal target comparison is part of FPJ-034."
+    - "Documentation distinguishes released-code target, detached EMA target and stored-but-unused EMA weights, and does not claim paper-faithful reproduction before gate approval."
+    - "The exact full pytest baseline passes, with skipped tests reported separately."
   required_commands:
     - >-
       wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python
       -m pytest -q
 
 known_gaps:
-  - "reach-wall-v3 has only a one-episode preliminary expert probe (first success 159/200); formal data quality and non-ceiling policy behavior are not yet established."
-  - "The Alibaba Cloud DSW instance is stopped and its free system-disk retention window is finite; do not start a costly run before local gates, resume support and budget checks pass."
-  - "Local WSL CUDA remains unavailable; any full-channel training result must identify the A10/CUDA environment explicitly."
-  - "The public repository is source-complete but does not yet contain a sanitized experiment evidence bundle or a verified fresh-machine quick start."
-  - "The training CLI does not yet expose periodic checkpoints or resume even though trainer state restore exists."
-  - "EMA weights are stored but the loss still uses target_mode='code'; detached EMA is scheduled for FPJ-034, not this task."
-  - "The modern MetaWorld/MuJoCo stack is a documented substitute and cannot be claimed pixel-identical to the paper stack."
+  - "The current loss uses target_mode='code'; EmaModel state is stored but is not yet a separate target policy used to compute v_r."
+  - "A second full policy copy may materially increase memory; FPJ-034 must measure a small CPU configuration before any full-channel proposal."
+  - "Long-process CPU resume is state-correct but not universally bit-exact; FPJ-031's measured 1e-2 tolerance remains unless new evidence narrows it."
+  - "Local WSL CUDA remains unavailable and the Alibaba Cloud DSW instance is stopped; FPJ-034 does not authorize cloud restart or spend."
+  - "FPJ-033 public evidence is gate-approved; FPJ-034 implementation must preserve all tracked and untracked user/project assets."
+  - "Evidence-bundle sanitizer/atomicity/schema and experiment --reuse provenance have nonblocking P2 debt from FPJ-033; they are outside FPJ-034 unless separately queued."
 
 prohibited_claims:
-  - "paper success rate reproduced"
-  - "EMA target used in training"
-  - "reach-wall-v3 full-channel result completed before all seeds and episode records exist"
-  - "full-channel limited-budget result is the paper's 3000-epoch or 37-task result"
-  - "public evidence bundle contains raw datasets or checkpoints"
-  - "bit-exact save/resume"
+  - "paper-faithful detached EMA target completed before verification, anti-pattern, quality and gate all pass"
+  - "paper success rate or full paper recipe reproduced"
+  - "detached target is equivalent to applying stop_gradient to the online policy"
+  - "full-channel target comparison completed"
+  - "cloud CUDA result produced by FPJ-034"
+  - "bit-exact save/resume in every process history"

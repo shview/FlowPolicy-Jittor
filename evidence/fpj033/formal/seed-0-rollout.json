@@ -1,0 +1,316 @@
+{
+  "action_slice_mode": "code",
+  "checkpoint": "policy.ckpt",
+  "checkpoint_extra_keys": [],
+  "checkpoint_fresh_policy_reload_max_abs_delta": 1.1920928955078125e-07,
+  "checkpoint_reload_max_abs_delta": 2.384185791015625e-07,
+  "checkpoint_repeat_max_abs_delta": 2.384185791015625e-07,
+  "checkpoint_same_object_reload_max_abs_delta": 2.384185791015625e-07,
+  "checkpoint_sha256": "e8eac82ea3bf28be9f1d3b9cf5a40b4905fdca134733b83a9cd51eb06dfce96e",
+  "data": "reach-wall-v3.zarr",
+  "device": "cuda",
+  "episode_count": 20,
+  "episodes": [
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 0,
+      "index": 0,
+      "policy_latency_ms": {
+        "mean": 3.8084083731220417,
+        "p95": 3.847258700079692
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 1,
+      "index": 1,
+      "policy_latency_ms": {
+        "mean": 3.8362000597310306,
+        "p95": 3.8782384002388426
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 2,
+      "index": 2,
+      "policy_latency_ms": {
+        "mean": 3.819594343270576,
+        "p95": 3.889338800081532
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 3,
+      "index": 3,
+      "policy_latency_ms": {
+        "mean": 3.8159744925593913,
+        "p95": 3.876058500100043
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 4,
+      "index": 4,
+      "policy_latency_ms": {
+        "mean": 3.8169197313667365,
+        "p95": 3.8632975000837178
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 5,
+      "index": 5,
+      "policy_latency_ms": {
+        "mean": 3.81593632835629,
+        "p95": 3.8779578999765363
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 6,
+      "index": 6,
+      "policy_latency_ms": {
+        "mean": 3.817937402983709,
+        "p95": 3.890130100080569
+      },
+      "steps": 200,
+      "success": true,
+      "success_steps": 26
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 7,
+      "index": 7,
+      "policy_latency_ms": {
+        "mean": 3.8109237014653976,
+        "p95": 3.8749803999053256
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 8,
+      "index": 8,
+      "policy_latency_ms": {
+        "mean": 3.8172104477373288,
+        "p95": 3.876765100085322
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 9,
+      "index": 9,
+      "policy_latency_ms": {
+        "mean": 3.8150886865905567,
+        "p95": 3.868281199811463
+      },
+      "steps": 200,
+      "success": true,
+      "success_steps": 42
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 10,
+      "index": 10,
+      "policy_latency_ms": {
+        "mean": 3.807405731332614,
+        "p95": 3.8496432000101777
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 11,
+      "index": 11,
+      "policy_latency_ms": {
+        "mean": 3.8132940746382062,
+        "p95": 3.8692569998602266
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 12,
+      "index": 12,
+      "policy_latency_ms": {
+        "mean": 3.8195765373054757,
+        "p95": 3.8841528000375547
+      },
+      "steps": 200,
+      "success": true,
+      "success_steps": 1
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 13,
+      "index": 13,
+      "policy_latency_ms": {
+        "mean": 3.8264782686573158,
+        "p95": 3.87785959987923
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 14,
+      "index": 14,
+      "policy_latency_ms": {
+        "mean": 3.825040283566102,
+        "p95": 3.880593399890131
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 15,
+      "index": 15,
+      "policy_latency_ms": {
+        "mean": 3.8049508806132017,
+        "p95": 3.875616700042883
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 16,
+      "index": 16,
+      "policy_latency_ms": {
+        "mean": 3.808694820901422,
+        "p95": 3.894817600121314
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 17,
+      "index": 17,
+      "policy_latency_ms": {
+        "mean": 3.8120379999578398,
+        "p95": 3.886214399972232
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 18,
+      "index": 18,
+      "policy_latency_ms": {
+        "mean": 3.8156729701428835,
+        "p95": 3.9017453999804275
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 19,
+      "index": 19,
+      "policy_latency_ms": {
+        "mean": 3.8056679701497416,
+        "p95": 3.8612379998539836
+      },
+      "steps": 200,
+      "success": true,
+      "success_steps": 26
+    }
+  ],
+  "evidence_status": "twenty-episode A10 closed-loop cell in the documented substitute simulator",
+  "model_config": {
+    "down_dims": [
+      512,
+      1024,
+      2048
+    ],
+    "embed_dim": 128,
+    "encoder_out": 64,
+    "kernel_size": 5,
+    "n_groups": 8,
+    "pointnet_out": 64,
+    "var_fc_hidden_dim": 512
+  },
+  "n_action_steps": 4,
+  "n_obs_steps": 2,
+  "nfe": 1,
+  "num_points": 1024,
+  "policy_action_bounds": [
+    1,
+    5
+  ],
+  "policy_horizon": 4,
+  "prohibited_claims": [
+    "fewer than the declared formal episode count is not a success-rate measurement",
+    "matching the paper architecture does not imply matching its training recipe or simulator"
+  ],
+  "sim_python": "$FLOWPOLICY_SIM_PYTHON",
+  "simulator": {
+    "action_dim": 4,
+    "image_size": 128,
+    "ok": true,
+    "point_count": 1024,
+    "seed": 0,
+    "task": "reach-wall-v3",
+    "variants": 50
+  },
+  "success_episodes": 4,
+  "task": "reach-wall-v3",
+  "total_steps": 4000,
+  "wall_seconds": 769.567729112
+}

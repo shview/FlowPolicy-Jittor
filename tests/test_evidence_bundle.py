@@ -66,3 +66,35 @@ def test_bundle_refuses_implicit_overwrite(tmp_path):
             out_dir=out,
             overwrite=False,
         )
+
+
+def test_cloud_commands_are_made_portable_and_public_safe():
+    value = bundle.sanitize_experiments(
+        {
+            "cells": [
+                {
+                    "train": {
+                        "command": [
+                            "/mnt/workspace/venvs/flowpolicy/bin/python",
+                            "/mnt/workspace/projects/repo/scripts/train_smoke.py",
+                        ]
+                    },
+                    "rollout": {
+                        "command": [
+                            "/mnt/workspace/venvs/flowpolicy-sim/bin/python",
+                            "/mnt/workspace/projects/repo/scripts/rollout.py",
+                        ]
+                    },
+                }
+            ]
+        }
+    )
+    assert value["cells"][0]["train"]["command"] == [
+        "$FLOWPOLICY_TRAIN_PYTHON",
+        "scripts/train_smoke.py",
+    ]
+    assert value["cells"][0]["rollout"]["command"] == [
+        "$FLOWPOLICY_SIM_PYTHON",
+        "scripts/rollout.py",
+    ]
+    bundle.assert_public_safe(value)

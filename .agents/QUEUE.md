@@ -92,25 +92,30 @@ Gate `FPJ032-GATE-01` 通过。A10/CUDA 12.1 上完成真实 Jittor CUDA、真�
 数据集、输出、checkpoint、密钥或大文件。该结果是单任务完整通道有限预算证据，不是论文
 3000 epochs / 37 任务配方；基线保持 `213 passed, 1 skipped`。
 
+### [x] FPJ-033：更难 MetaWorld 任务与完整通道有限预算实验
+
+Gate `FPJ033-GATE-01` 通过。`reach-wall-v3` 的 10 个专家 variant 全部成功后，正式数据、
+本地 smoke、周期 checkpoint / CLI resume 与 fresh-clone 检查均通过；A10 上完成完整
+`512/1024/2048` 通道、30 epochs、3 seeds × 20 episodes，结果为 4/20、5/20、10/20，
+即 **31.67% ± 16.07%**，策略平均延迟 3.775 ms，外部采样峰值显存 10605 MiB。
+15 个脱敏公开证据文件的 manifest/source 哈希、全部 60 条 episode 与 Git 候选内容经独立复核；
+不含原始数据集/checkpoint，也不是论文 3000-epoch/37-task 结果。基线更新为
+`227 passed, 1 skipped`。
+
 ## 当前任务
 
-### [>] FPJ-033：更难 MetaWorld 任务与完整通道有限预算实验
+### [>] FPJ-034：论文式 detached EMA target
 
-- 首选 `reach-wall-v3`：它在上游 FlowPolicy 配置中存在，本机脚本专家初步探测为 159/200，
-  但必须先做多 variant 专家质量探测；若不合格，不能静默换任务，需先更新任务记录；
-- 本地阶段先完成正式示范、数据契约检查、低预算 smoke、失败类型记录和可中断恢复的训练 CLI；
-- 云端阶段沿用完整 `512/1024/2048` 通道、3 seeds × 20 episodes 的同口径有限预算，
-  只有本地门槛与恢复测试通过后才启动 A10；不得把结果写成论文 3000 epochs 配方；
-- 发布脱敏证据包（配置、manifest、哈希、训练摘要与逐回合结果，不含数据集/checkpoint/私有路径），
-  并补 README 新机器 quick start 与显式 `--sim-python` 用法；
-- 该任务结束后依次进行 FPJ-034（detached EMA target）和 FPJ-035（code target vs detached target 对照）。
+- 为 `v_r` 增加与在线 policy 分离、不可训练且显式 detached 的 EMA target；不能只在在线输出上
+  加 `stop_gradient`，也不能改变现有 `target_mode="code"` 的默认行为；
+- 明确定义 EMA target 的初始化与更新时序，并用小配置测试证明 target 不接收 optimizer 梯度、
+  不被在线 optimizer 更新，而是只按 EMA 规则变化；
+- trainer checkpoint 必须保存、校验并恢复在线权重与 target/EMA 双方状态，覆盖继续训练；旧 checkpoint
+  要么保持兼容，要么以清晰错误拒绝，不能静默改变语义；
+- 先完成有限值、梯度隔离、保存/恢复、CPU 小配置资源开销与全量回归测试；本任务不授权云端开机或
+  昂贵正式实验，未通过 gate 前不得称为 paper-faithful target。
 
 ## 后续顺序
-
-### [ ] FPJ-034：论文式 detached EMA target
-
-实现、保存、恢复并验证真正用于 `v_r` 的 detached EMA 副本；先做小配置梯度和显存测试，
-不能只加 `stop_gradient` 就称为 paper-faithful。
 
 ### [ ] FPJ-035：target 语义对照
 

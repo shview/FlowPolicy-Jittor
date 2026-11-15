@@ -196,14 +196,20 @@ A10 上使用完整 `512/1024/2048` 通道、255,138,308 个可训练参数、10
 10726 MiB。每个 checkpoint 做 20 个闭环 episode，得到 20/20、20/20、20/20；
 三个 seed 的策略推理均值为 3.811 ± 0.016 ms，NFE=1。
 
-这是论文网络结构的有限预算结果，不是完整论文配方：训练 epoch 更少，当前只有一个任务，
-仿真栈不同，且 detached EMA target 未启用。满分也提示 `button-press-wall-v3` 存在天花板效应；
-下一步优先增加更难任务或代表性失败案例，而不是继续增加容易任务的 seed。
+同一模型、点数、batch、epoch、seed 数和评测口径又用于更难的 `reach-wall-v3`。三个 seed
+分别得到 4/20、5/20、10/20，汇总为 **31.67% ± 16.07%**；平均策略延迟 3.775 ms，
+外部 `nvidia-smi` 采样峰值为 10605 MiB。这个结果既避免只展示容易任务的满分，也显示出
+20 条示范和 30 epochs 下明显的 seed 方差。
+
+两项都是论文网络结构的有限预算结果，不是完整论文配方：训练 epoch 更少，现代仿真栈与论文旧栈
+不同，且 detached EMA target 未启用。`button-press-wall-v3` 的满分提示天花板效应，
+`reach-wall-v3` 则提供失败样本和稳定性问题，二者结合比单独报告最高成功率更有解释力。
 
 ### 任务安排
 
-- 当前低预算网格：`button-press-wall-v3` 与 `reach-v3`，因为两者已有正式示范、checkpoint 和逐 episode 结果。
-- 后续扩展候选：`reach-wall-v3`（脚本专家探测 159/200），在采集正式示范并完成同口径训练前不列入现有对比。
+- CPU 低预算网格：`button-press-wall-v3` 与 `reach-v3`，保留作为早期闭环和脚本验证证据。
+- A10 完整通道有限预算对照：`button-press-wall-v3` 与 `reach-wall-v3`。后者先通过 10/10 专家变体
+  探测和 20 条确定性示范门槛，再按与前者相同的模型、点数、batch、epoch、seed 数和评测 episode 数运行。
 - 暂不从 Adroit 开始，避免同时引入高维灵巧手、VRL3 checkpoint 和额外环境差异。
 - 不要用 `door-open-v3`：本机专家只有 30/200 成功，示范质量不足。
 
@@ -239,6 +245,8 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
 - [x] 推理计时包含同步说明（rollout 报告记录 mean/p95 延迟与 NFE=1）。
 - [x] 完整通道 A10 试验记录 3 seeds × 20 episodes、训练/验证 loss、checkpoint/data/config SHA256、
       峰值显存与策略延迟；证据目录含逐回合 JSON。
+- [x] 第二个完整通道任务 `reach-wall-v3` 按匹配预算完成 3 seeds × 20 episodes；公开脱敏包保留全部
+      逐 episode 记录、训练曲线和哈希，不包含数据集、checkpoint、私有路径或密钥。
 
 ### 防止走偏
 
@@ -273,6 +281,8 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
 - [x] 模型训练和推理确认使用 Jittor。
 - [x] 两个任务的低预算结果可追溯到配置、seed、checkpoint 和日志。
 - [x] `button-press-wall-v3` 的完整通道 A10 三 seed 有限预算结果可追溯到配置、哈希和逐回合 JSON。
+- [x] `reach-wall-v3` 的完整通道 A10 三 seed 有限预算结果已公开到 `evidence/fpj033/formal/`；
+      与容易任务的比较使用匹配预算并明确标注为项目内有限预算对照。
 - [x] README 不夸大结果，论文/代码差异均被记录。
 - [x] GitHub 仓库未跟踪数据集、checkpoint、训练输出或密钥；环境文档中的绝对路径仅用于说明可复现的隔离环境与云端挂载位置。
 
