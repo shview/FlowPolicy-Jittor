@@ -94,8 +94,8 @@ Gate `FPJ031-GATE-01` 通过。新增 `scripts/determinism_probe.py`（逐步权
 - 三个训练摘要、epoch 曲线、逐回合 rollout、checkpoint/data/config SHA256 和总汇总已经保存到本地证据目录；
 - 实例于 2026-11-15 16:23 手动停止，控制台累计服务时长约 2 小时 39 分钟；免费云盘停机只保留 15 天；
 - 答辩材料（幻灯片、demo 视频、逐帧失败案例回放）需要用户确认形式与时间；
-- 当前仍处于 implementation：代码与实验已完成，等待串行 verification / anti-pattern / quality / gate 阶段；
-  后续实验优先第二个难任务或失败案例，不优先增加第 4、5 个容易任务 seed。
+- 代码、实验与首次 GitHub 发布已经完成，FPJ-032 仍需通过串行 verification / anti-pattern / quality / gate；
+  gate 后的下一项优先第二个难任务或失败案例，不优先增加第 4、5 个容易任务 seed。
 
 ## 测试可靠性
 

@@ -274,5 +274,5 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
 - [x] 两个任务的低预算结果可追溯到配置、seed、checkpoint 和日志。
 - [x] `button-press-wall-v3` 的完整通道 A10 三 seed 有限预算结果可追溯到配置、哈希和逐回合 JSON。
 - [x] README 不夸大结果，论文/代码差异均被记录。
-- [ ] GitHub 仓库无数据集、checkpoint、密钥或本机绝对路径。
+- [x] GitHub 仓库未跟踪数据集、checkpoint、训练输出或密钥；环境文档中的绝对路径仅用于说明可复现的隔离环境与云端挂载位置。
 

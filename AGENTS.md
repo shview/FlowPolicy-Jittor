@@ -129,7 +129,7 @@ wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python 
 - 不得把 PyTorch 放入 Jittor 训练计算图；PyTorch 只能用于独立 parity 测试或仿真预处理，并需说明边界。
 - 训练器必须使用 `policy.trainable_parameters()`，不能直接使用 `policy.parameters()`。
 - 未经用户明确要求，不 commit、push、创建 GitHub 仓库、上传文件、租用云 GPU 或运行高成本正式实验。
-- 当前工作树尚未首次提交，所有既有文件均视为用户/项目资产，不得重置或丢弃。
+- 当前工作树已发布到 GitHub；已有提交、未提交改动和未跟踪文件均视为用户/项目资产，不得重置或丢弃。
 
 ## 6. 禁止的结果表述
 

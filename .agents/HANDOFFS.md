@@ -2123,5 +2123,93 @@
   - skipped test counted as passed.
 - Recommended next role: verification
 
+## FPJ032-VERIFY-01
+
+- Task: FPJ-032 cloud GPU feasibility, full-channel limited-budget experiment and initial publication
+- Role completed: verification
+- Result: needs_fix
+- Owner: /root/fpj032_verification
+- Product files changed: none (read-only verification)
+- Coordination files changed:
+  - `.agents/STATE.yaml`
+  - `.agents/HANDOFFS.md` (this append-only record)
+- Commands run and exact results:
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q`
+    - exit 0; `213 passed, 1 skipped, 8 warnings in 203.73s`;
+    - skipped: `tests/test_conv1d_parity.py` because the core environment has no PyTorch; it is not counted as passed.
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python scripts/check_environment.py --strict-train --allow-cpu`
+    - exit 0; `strict_check.passed=true`, CPU smoke value `5.0`, local `has_cuda=false`.
+  - independent Python recomputation from the 3 train summaries and 60 raw rollout episodes under `artifacts/aliyun_dsw/formal_pilot_20261115/`
+    - exit 0 / `status=PASS`;
+    - successes `[20,20,20]`, 60 episodes, 12000 environment steps, success-step range `[107,152]`;
+    - latency seed means `[3.8290180806,3.8001388604,3.8026988134]` ms, aggregate `3.8106185848 ± 0.0159857569` ms;
+    - last-epoch loss mean `6.8190333531e-6`, validation-loss mean `7.3595988397e-6`, mean train wall time `688.1382816810` s;
+    - checkpoint hashes agree between each train summary and its rollout, while three config hashes are distinct by seed and the data hash is common.
+  - cloud evidence inspection:
+    - `environment_check.log` records real A10/CUDA 12.1 Jittor CUDA kernel success;
+    - `gpu_training_summary.json` records 34 real-data updates and a checkpoint path;
+    - `full_channels_a10_report.json` plus `03_full_channels_a10_pass.png` record one finite 512/1024/2048 forward/backward/update, 255138308 parameters and the explicit boundary “one feasibility step; not paper-scale training”;
+    - `simulation_probe.log` and `rollout_bridge_report.json` record EGL RGB, 1024-point cloud, 9-D state and the cross-environment closed-loop bridge.
+  - Git/publication checks:
+    - GitHub page independently showed public `main`, latest commit `031d485`, two commits, source tree, README and MIT license;
+    - local `HEAD` and `origin/main` both resolve to `031d48533800`;
+    - `git ls-tree -r HEAD` contains no root `data/`, `outputs/`, `checkpoints/`, `wandb/`, `artifacts/` or `.zarr/` path;
+    - common private-key/token signature scan found none; largest tracked blob is 123275 bytes;
+    - `src/flowpolicy_jittor/data/{__init__.py,dataset.py}` is tracked while root data/output/checkpoint paths remain ignored.
+- Acceptance status:
+  - CUDA, real-data update, full-channel feasibility, headless simulation, hashes and non-paper-result boundaries: verified.
+  - P1/blocker — documentation synchronization acceptance is not met after publication:
+    - `README.md:72` still lists “GitHub 发布” among unfinished work;
+    - `docs/REPRODUCTION_PLAN.md:277` still leaves the verified GitHub hygiene item unchecked;
+    - `.agents/QUEUE.md:97` still says the current task is at implementation, conflicting with `.agents/STATE.yaml`;
+    - `AGENTS.md:132` still says the worktree has no first commit (protocol debt; outside the current product scope unless handled as protocol maintenance).
+- Required fix:
+  - update the three in-scope publication/stage statements without changing experimental claims;
+  - handle the stale `AGENTS.md:132` statement through an allowed protocol-maintenance edit or explicitly record why it remains historical;
+  - rerun the state validator and focused publication checks, then return to verification.
+- Prohibited claims remain unchanged:
+  - paper success rate reproduced;
+  - full 3000-epoch / 37-task recipe completed;
+  - detached EMA target used;
+  - bit-exact CUDA inference or long-process resume;
+  - skipped test counted as passed.
+- Recommended next role: implementation
+
+## MAINT-20261115-01
+
+- Type: protocol maintenance
+- Owner: /root
+- Trigger: the user authorized and completed the first GitHub publication, making one repository-state sentence stale.
+- File changed: `AGENTS.md`
+- Change: replaced “the worktree has no first commit” with the current safety rule that committed, uncommitted and untracked project assets must not be reset or discarded.
+- Protocol impact: none; task id, stage transitions, role responsibilities and acceptance rules were not changed.
+
+## FPJ032-IMPL-03
+
+- Task: FPJ-032 publication-state documentation retry
+- Role completed: implementation
+- Result: passed
+- Owner: /root
+- Files changed:
+  - `README.md`
+  - `docs/REPRODUCTION_PLAN.md`
+  - `.agents/QUEUE.md`
+  - `AGENTS.md` (factual protocol-maintenance edit recorded separately above)
+  - `.agents/STATE.yaml`
+  - `.agents/HANDOFFS.md`
+- Fixes for `FPJ032-VERIFY-01`:
+  - README now links the published repository and no longer lists GitHub publication as unfinished;
+  - the reproduction checklist records the verified publication hygiene while explicitly allowing documented environment/mount paths;
+  - the queue no longer hard-codes a stale current stage and instead says serial review remains before gate;
+  - AGENTS keeps its asset-preservation rule but no longer claims there is no first commit.
+- Commands run and exact results:
+  - stale-statement `rg` check: `none`;
+  - focused boundary check found the GitHub URL, non-paper-result warning, tracked-artifact statement and remaining serial review statement;
+  - `git -c core.whitespace=-blank-at-eof diff --check`: no whitespace error;
+  - state validator: passed while implementation was in progress;
+  - full regression: `213 passed, 1 skipped, 8 warnings in 175.52s`; skipped PyTorch parity is not counted as passed.
+- Remaining risks and prohibited claims: unchanged from `FPJ032-VERIFY-01`.
+- Recommended next role: verification
+
 
 
