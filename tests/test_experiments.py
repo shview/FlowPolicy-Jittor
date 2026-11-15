@@ -125,3 +125,27 @@ def test_report_records_the_prohibited_claims(tmp_path, monkeypatch):
     assert "paper success rate reproduced" in report["prohibited_claims"]
     assert report["config"]["episodes"] == 20
     assert (out / "SUMMARY.md").exists()
+
+
+def test_training_command_enables_periodic_checkpoints(tmp_path):
+    args = argparse.Namespace(
+        data_dir=tmp_path,
+        epochs=30,
+        batch_size=64,
+        lr=1e-3,
+        warmup=20,
+        down_dims=[512, 1024, 2048],
+        embed_dim=128,
+        encoder_out=64,
+        pointnet_out=64,
+        kernel_size=5,
+        n_groups=8,
+        var_fc_hidden_dim=512,
+        num_points=1024,
+        device="cuda",
+        run_label="full-channel-limited-budget",
+        checkpoint_every=5,
+    )
+    command = experiments.train_command(args, "reach-wall-v3", 0, tmp_path / "run")
+    position = command.index("--checkpoint-every")
+    assert command[position + 1] == "5"

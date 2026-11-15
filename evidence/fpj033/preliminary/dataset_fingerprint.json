@@ -1,0 +1,103 @@
+{
+  "array_count": 5,
+  "arrays": {
+    "data/action": {
+      "attrs": {},
+      "chunks": [
+        2400,
+        4
+      ],
+      "dtype": "float32",
+      "nbytes": 38400,
+      "sha256": "88f9f2789b296c35e8565751dd9b2452d9bf88eeefefed6e20ec5cdebb715950",
+      "shape": [
+        2400,
+        4
+      ]
+    },
+    "data/point_cloud": {
+      "attrs": {},
+      "chunks": [
+        2400,
+        1024,
+        3
+      ],
+      "dtype": "float32",
+      "nbytes": 29491200,
+      "sha256": "6dce63128bd8db1a1986e783216552aea5dad3e07d3a05f5356cc1e93e34a24b",
+      "shape": [
+        2400,
+        1024,
+        3
+      ]
+    },
+    "data/state": {
+      "attrs": {},
+      "chunks": [
+        2400,
+        9
+      ],
+      "dtype": "float32",
+      "nbytes": 86400,
+      "sha256": "bc8d7bdc8024fcc84b5d985233320afdea63e5b203feb5c80c6188263177691d",
+      "shape": [
+        2400,
+        9
+      ]
+    },
+    "meta/episode_ends": {
+      "attrs": {},
+      "chunks": [
+        20
+      ],
+      "dtype": "int64",
+      "nbytes": 160,
+      "sha256": "b6bd6a1e72d7a51baefc8db134c338e9cf942adccc9414355dc8b32e6be4a1a9",
+      "shape": [
+        20
+      ]
+    },
+    "meta/success_steps": {
+      "attrs": {},
+      "chunks": [
+        20
+      ],
+      "dtype": "int32",
+      "nbytes": 80,
+      "sha256": "367b91e7d5f6cbc5bdc5ee671bc7455faabd918d2305d533e0317b2be07617a6",
+      "shape": [
+        20
+      ]
+    }
+  },
+  "claim_boundary": "The fingerprint identifies logical Zarr contents and metadata; it does not publish the demonstration arrays or prove learned-policy performance.",
+  "content_sha256": "1552bf53f994840b4cbb81ad6ce39584bb0923ed4b3b8601096481c2a0b7daae",
+  "group_attrs": {
+    "provenance": {
+      "camera": "corner2",
+      "image_size": 128,
+      "packages": {
+        "gymnasium": "1.4.0",
+        "metaworld": "3.0.0",
+        "mujoco": "3.3.7",
+        "numpy": "1.26.4",
+        "zarr": "2.12.0"
+      },
+      "seed": 0,
+      "synthetic": false,
+      "task": "reach-wall-v3",
+      "world_bounds": [
+        -0.35,
+        0.25,
+        -0.05,
+        0.35,
+        0.95,
+        0.55
+      ],
+      "writer": "scripts/record_demos.py"
+    }
+  },
+  "schema_version": 1,
+  "store_name": "reach-wall-v3.zarr",
+  "total_nbytes": 29616240
+}

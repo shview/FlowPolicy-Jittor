@@ -1,0 +1,19 @@
+{
+  "bundle_status": "preliminary local gates complete; full-channel cloud run pending",
+  "claim_boundary": "This bundle proves expert/data determinism, resumable local training and a five-episode closed-loop smoke. It is not the full-channel three-seed result and not the paper's training recipe.",
+  "excluded": [
+    "raw Zarr demonstrations",
+    "policy/trainer checkpoints",
+    "private paths",
+    "secrets"
+  ],
+  "files_sha256": {
+    "dataset_fingerprint.json": "ec1142df8a2ebff890687fd1987295bb0c84a8f4b0b339d2f7c8ce5e84ec5cbe",
+    "expert_probe.json": "86c8ea0b3a602e6b65cc30df5df0a30b1ac287f280eac5ec2f97fbdce775b182",
+    "local_rollout.json": "d65d630b8c31fe1c23bdb52d4c2eeec1d8d72f6dc44492817958f961158253a0",
+    "local_train_summary.json": "ad27cd3835135ec8659a318ab754f0b4df16740b8c1e827aeb0fbfdeea29b444"
+  },
+  "git_commit_at_generation": "d74a0c93af3550703926669963c4db44011e4a52",
+  "schema_version": 1,
+  "task": "reach-wall-v3"
+}

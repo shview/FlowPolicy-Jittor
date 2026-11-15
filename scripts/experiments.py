@@ -45,7 +45,7 @@ def data_path(task: str, data_dir: Path) -> Path:
 
 
 def train_command(args, task: str, seed: int, run_dir: Path) -> List[str]:
-    return [
+    command = [
         sys.executable,
         str(REPO_ROOT / "scripts/train_smoke.py"),
         "--data", str(data_path(task, args.data_dir)),
@@ -66,6 +66,10 @@ def train_command(args, task: str, seed: int, run_dir: Path) -> List[str]:
         "--run-label", args.run_label,
         "--out", str(run_dir / "train"),
     ]
+    checkpoint_every = int(getattr(args, "checkpoint_every", 0))
+    if checkpoint_every > 0:
+        command.extend(["--checkpoint-every", str(checkpoint_every)])
+    return command
 
 
 def rollout_command(args, task: str, seed: int, run_dir: Path) -> List[str]:
@@ -319,6 +323,13 @@ def main(argv=None) -> int:
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-3)
     parser.add_argument("--warmup", type=int, default=20)
+    parser.add_argument(
+        "--checkpoint-every",
+        type=int,
+        default=5,
+        metavar="EPOCHS",
+        help="periodic trainer checkpoint interval passed to each training cell",
+    )
     parser.add_argument("--down-dims", nargs="+", type=int, default=[32, 64])
     parser.add_argument("--embed-dim", type=int, default=32)
     parser.add_argument("--encoder-out", type=int, default=64)
@@ -345,6 +356,8 @@ def main(argv=None) -> int:
 
     if args.episodes < 1:
         raise SystemExit("--episodes must be at least 1")
+    if args.checkpoint_every < 0:
+        raise SystemExit("--checkpoint-every must be non-negative")
     if not args.seeds:
         raise SystemExit("--seeds must not be empty")
     if len(set(args.seeds)) != len(args.seeds):
@@ -384,6 +397,7 @@ def main(argv=None) -> int:
         "episodes": args.episodes,
         "max_steps": args.max_steps,
         "epochs": args.epochs,
+        "checkpoint_every": args.checkpoint_every,
         "batch_size": args.batch_size,
         "down_dims": args.down_dims,
         "embed_dim": args.embed_dim,

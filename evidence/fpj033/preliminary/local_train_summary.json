@@ -1,0 +1,87 @@
+{
+  "batch_size": 64,
+  "checkpoint": "policy.ckpt",
+  "checkpoint_sha256": "bb15aee3f3855a0cd6f53e823c547c0cfa48ec01046e8cded2556f0db847793b",
+  "completed_epochs": 4,
+  "config": {
+    "down_dims": [
+      32,
+      64
+    ],
+    "embed_dim": 32,
+    "encoder_out": 64,
+    "kernel_size": 3,
+    "lr": 0.001,
+    "n_groups": 8,
+    "num_points": 1024,
+    "pointnet_out": 64,
+    "seed": 0,
+    "val_ratio": 0.02,
+    "var_fc_hidden_dim": 64,
+    "warmup": 20
+  },
+  "config_sha256": "72fcbcaf988ec1a6029175f0ee65796ba1ff5fe32e039a3a8523d47bcfa9ace8",
+  "data": "reach-wall-v3.zarr",
+  "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+  "device": "cpu",
+  "ema": {
+    "decay": null,
+    "effective_decay": null,
+    "enabled": false,
+    "note": "EMA weights are the target for the flow-matching update in the paper; this run keeps them in the trainer checkpoint only and evaluates the online policy",
+    "optimization_step": null,
+    "trainer_checkpoint": "trainer.ckpt",
+    "warmup_steps": 0
+  },
+  "epochs": 4,
+  "evidence_status": "local low-budget resume smoke; not a formal success rate",
+  "loss": {
+    "first": 4.7532714233966544e-05,
+    "last_epoch_mean": 3.282244272538394e-05,
+    "min": 2.6845356842386536e-05,
+    "val": 2.6534495191299357e-05
+  },
+  "note": "small-channel CPU smoke training; NOT the paper configuration",
+  "paper_architecture": false,
+  "prohibited_claims": [
+    "not the paper training configuration (small channels, CPU)",
+    "with --ema-decay EMA weights are tracked but not used as the loss target",
+    "no success rate is implied by the training loss"
+  ],
+  "resume": {
+    "checkpoint_every": 2,
+    "checkpoints_written_this_invocation": [
+      {
+        "epoch": 4,
+        "global_step": 140,
+        "path": "epoch-0004.ckpt",
+        "sha256": "10b79b4be8c9ab70ef345d9bc7915cb35308eda11ef5c527647c8e656db6dd37"
+      }
+    ],
+    "claim_boundary": "State and schedule restore exactly; prior measurements allow up to 1e-2 long-process parameter drift, so bit-exact resume is not claimed.",
+    "resumed": true,
+    "resumed_from": "epoch-0002.ckpt",
+    "start_epoch": 2
+  },
+  "run_label": "fpj033-local-resume-smoke",
+  "runtime": {
+    "cpu_count": 24,
+    "device": "cpu",
+    "jittor": "1.3.11.0",
+    "omp_num_threads": "4",
+    "platform": "Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "python": "3.10.14"
+  },
+  "seconds_per_step": 9.28486515920002,
+  "seconds_per_step_this_invocation": 9.28486515920002,
+  "steps_per_epoch": 35,
+  "steps_this_invocation": 70,
+  "total_steps": 140,
+  "train_windows": 2299,
+  "trainable_parameters": 436676,
+  "trainer_checkpoint": "trainer.ckpt",
+  "trainer_checkpoint_sha256": "10b79b4be8c9ab70ef345d9bc7915cb35308eda11ef5c527647c8e656db6dd37",
+  "val_windows": 121,
+  "wall_seconds": 649.9405611440015,
+  "wall_seconds_this_invocation": 649.9405611440015
+}

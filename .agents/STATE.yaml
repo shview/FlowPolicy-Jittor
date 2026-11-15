@@ -38,8 +38,8 @@ current:
   title: "Harder MetaWorld task and full-channel limited-budget experiment"
   attempt: 1
   stage: implementation
-  status: ready
-  owner: null
+  status: in_progress
+  owner: /root
   last_handoff_id: FPJ032-GATE-01
   next_stage: verification
   role_handoffs:

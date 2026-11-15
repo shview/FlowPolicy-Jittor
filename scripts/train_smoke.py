@@ -19,6 +19,7 @@ import os
 import platform
 import subprocess
 import sys
+import tempfile
 import time
 from pathlib import Path
 from typing import Dict, List
@@ -95,13 +96,57 @@ def runtime_fingerprint(jt, device: str) -> Dict[str, object]:
     return fingerprint
 
 
-def prepare_output_dir(path: Path, overwrite: bool) -> Path:
+def prepare_output_dir(path: Path, overwrite: bool, *, resume: bool = False) -> Path:
     """Create ``path`` unless it already holds results and overwriting is not allowed."""
     path = Path(path)
-    if path.exists() and any(path.iterdir()) and not overwrite:
+    if resume and overwrite:
+        raise SystemExit("--resume and --overwrite cannot be used together")
+    if path.exists() and any(path.iterdir()) and not overwrite and not resume:
         raise SystemExit(f"refusing to overwrite existing output directory: {path}")
     path.mkdir(parents=True, exist_ok=True)
     return path
+
+
+def write_json_atomic(path: Path, value: object) -> None:
+    """Replace a JSON report atomically so interruption cannot leave half a file."""
+
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(
+        prefix=f".{path.name}.", suffix=".tmp", dir=str(path.parent)
+    )
+    temporary = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as handle:
+            json.dump(value, handle, indent=2)
+            handle.write("\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        os.replace(temporary, path)
+    finally:
+        if temporary.exists():
+            temporary.unlink()
+
+
+def load_epoch_history(path: Path, *, completed_epochs: int) -> List[Dict[str, object]]:
+    """Load and validate the epoch metrics paired with a periodic checkpoint."""
+
+    if not path.is_file():
+        raise SystemExit(
+            f"resume checkpoint represents {completed_epochs} epochs but {path} is missing"
+        )
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, list) or len(value) < completed_epochs:
+        raise SystemExit(
+            f"epoch history has {len(value) if isinstance(value, list) else 'invalid'} entries; "
+            f"resume checkpoint requires {completed_epochs}"
+        )
+    history = value[:completed_epochs]
+    expected = list(range(1, completed_epochs + 1))
+    actual = [entry.get("epoch") if isinstance(entry, dict) else None for entry in history]
+    if actual != expected:
+        raise SystemExit(f"epoch history is not contiguous: expected {expected}, got {actual}")
+    return [dict(entry) for entry in history]
 
 
 def collate(items: List[Dict[str, object]]) -> Dict[str, object]:
@@ -202,6 +247,25 @@ def main(argv=None) -> int:
         help="enables EMA target tracking with this decay (paper: 0.999)",
     )
     parser.add_argument("--ema-warmup-steps", type=int, default=0)
+    parser.add_argument(
+        "--checkpoint-every",
+        type=int,
+        default=0,
+        metavar="EPOCHS",
+        help="save a resumable trainer checkpoint every N epochs (0 disables periodic saves)",
+    )
+    parser.add_argument(
+        "--resume",
+        type=Path,
+        default=None,
+        help="resume a periodic trainer checkpoint using the same --out and training config",
+    )
+    parser.add_argument(
+        "--stop-after-epoch",
+        type=int,
+        default=None,
+        help="planned early stop used to test/preempt a run while keeping --epochs as the target",
+    )
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args(argv)
 
@@ -219,7 +283,15 @@ def main(argv=None) -> int:
         raise SystemExit("--ema-decay must lie strictly between 0 and 1")
     if args.ema_warmup_steps < 0:
         raise SystemExit("--ema-warmup-steps must be non-negative")
-    out_dir = prepare_output_dir(args.out, args.overwrite)
+    if args.checkpoint_every < 0:
+        raise SystemExit("--checkpoint-every must be non-negative")
+    if args.stop_after_epoch is not None and not 1 <= args.stop_after_epoch <= args.epochs:
+        raise SystemExit("--stop-after-epoch must be within [1, --epochs]")
+    if args.resume is not None and not args.resume.is_file():
+        raise SystemExit(f"resume checkpoint does not exist: {args.resume}")
+    out_dir = prepare_output_dir(
+        args.out, args.overwrite, resume=args.resume is not None
+    )
     log_path = out_dir / "train.jsonl"
     if args.overwrite and log_path.exists():
         # A fresh run must not append to (and thereby mix in) a previous run's log.
@@ -263,11 +335,43 @@ def main(argv=None) -> int:
     )
 
     rng = np.random.default_rng([args.seed, 0xA11CE])
+    epochs_path = out_dir / "epochs.json"
+    start_epoch = 0
+    resumed_from = None
+    if args.resume is not None:
+        trainer.load_checkpoint(args.resume)
+        if trainer.global_step % steps_per_epoch != 0:
+            raise SystemExit(
+                "resume checkpoint is not at an epoch boundary: "
+                f"global_step={trainer.global_step}, steps_per_epoch={steps_per_epoch}"
+            )
+        start_epoch = trainer.global_step // steps_per_epoch
+        if start_epoch >= args.epochs:
+            raise SystemExit(
+                f"resume checkpoint already completed {start_epoch}/{args.epochs} epochs"
+            )
+        epochs_log = load_epoch_history(epochs_path, completed_epochs=start_epoch)
+        resumed_from = str(args.resume)
+        # Fresh runs use one stateful NumPy generator across epochs.  Replay only its
+        # permutations so the next epoch receives the same order after a restart.
+        for _ in range(start_epoch):
+            rng.permutation(windows)
+    else:
+        epochs_log = []
+
+    target_epoch = args.epochs
+    if args.stop_after_epoch is not None:
+        target_epoch = min(target_epoch, args.stop_after_epoch)
+    if target_epoch <= start_epoch:
+        raise SystemExit(
+            f"planned stop epoch {target_epoch} is not after resumed epoch {start_epoch}"
+        )
     started = time.perf_counter()
+    start_step = trainer.global_step
     first_loss = None
     minimum_loss = None
-    epochs_log = []
-    for epoch in range(args.epochs):
+    checkpoints = []
+    for epoch in range(start_epoch, target_epoch):
         order = rng.permutation(windows)
         epoch_losses = []
         for step in range(steps_per_epoch):
@@ -289,6 +393,38 @@ def main(argv=None) -> int:
                 "lr": float(trainer.learning_rate),
             }
         )
+        write_json_atomic(epochs_path, epochs_log)
+        epoch_number = epoch + 1
+        should_checkpoint = (
+            args.checkpoint_every > 0 and epoch_number % args.checkpoint_every == 0
+        ) or (epoch_number == target_epoch and target_epoch < args.epochs)
+        if should_checkpoint:
+            checkpoint_dir = out_dir / "checkpoints"
+            periodic = checkpoint_dir / f"epoch-{epoch_number:04d}.ckpt"
+            trainer.save_checkpoint(periodic)
+            checkpoints.append(
+                {
+                    "epoch": epoch_number,
+                    "global_step": trainer.global_step,
+                    "path": str(periodic),
+                    "sha256": sha256_file(periodic),
+                }
+            )
+            write_json_atomic(
+                out_dir / "progress.json",
+                {
+                    "status": "running" if epoch_number < target_epoch else "stopped",
+                    "target_epochs": args.epochs,
+                    "completed_epochs": epoch_number,
+                    "global_step": trainer.global_step,
+                    "latest_checkpoint": checkpoints[-1],
+                    "resumed_from": resumed_from,
+                    "claim_boundary": (
+                        "Trainer state and schedule are resumable; long-process CPU "
+                        "continuation is validated within 1e-2, not bit-exact."
+                    ),
+                },
+            )
         if (epoch + 1) % max(1, args.epochs // 10) == 0 or epoch == args.epochs - 1:
             print(
                 f"epoch {epoch + 1}/{args.epochs} mean {epochs_log[-1]['mean_loss']:.6e} "
@@ -296,6 +432,28 @@ def main(argv=None) -> int:
                 flush=True,
             )
     elapsed = time.perf_counter() - started
+
+    if target_epoch < args.epochs:
+        partial = {
+            "status": "stopped",
+            "target_epochs": args.epochs,
+            "completed_epochs": target_epoch,
+            "global_step": trainer.global_step,
+            "steps_this_invocation": trainer.global_step - start_step,
+            "resumed_from": resumed_from,
+            "checkpoints_written_this_invocation": checkpoints,
+            "wall_seconds_this_invocation": elapsed,
+            "next_step": (
+                f"rerun with the same arguments and --resume "
+                f"{checkpoints[-1]['path']} without --stop-after-epoch"
+            ),
+            "claim_boundary": (
+                "This is an intentional partial run, not a completed training or rollout result."
+            ),
+        }
+        write_json_atomic(out_dir / "partial_summary.json", partial)
+        print(json.dumps(partial, indent=2))
+        return 0
 
     val_loss = None
     if int(validation.num_windows) > 0:
@@ -307,12 +465,10 @@ def main(argv=None) -> int:
 
     checkpoint = out_dir / "policy.ckpt"
     policy.save_checkpoint(checkpoint, overwrite=args.overwrite)
-    trainer_checkpoint = None
-    if trainer.ema is not None:
-        # The EMA weights only exist in the trainer checkpoint; saving the policy alone
-        # would drop them silently.
-        trainer_checkpoint = out_dir / "trainer.ckpt"
-        trainer.save_checkpoint(trainer_checkpoint, overwrite=args.overwrite)
+    # Always keep a final trainer checkpoint: even without EMA it carries AdamW moments,
+    # global_step and the schedule.  The policy checkpoint remains the rollout artifact.
+    trainer_checkpoint = out_dir / "trainer.ckpt"
+    trainer.save_checkpoint(trainer_checkpoint, overwrite=args.overwrite)
     model_config = {
         "down_dims": args.down_dims,
         "embed_dim": args.embed_dim,
@@ -342,8 +498,10 @@ def main(argv=None) -> int:
         "train_windows": windows,
         "val_windows": int(validation.num_windows),
         "epochs": args.epochs,
+        "completed_epochs": target_epoch,
         "steps_per_epoch": steps_per_epoch,
         "total_steps": total_steps,
+        "steps_this_invocation": trainer.global_step - start_step,
         "batch_size": args.batch_size,
         "config": model_config,
         "config_sha256": config_sha256,
@@ -356,17 +514,37 @@ def main(argv=None) -> int:
             "last_epoch_mean": epochs_log[-1]["mean_loss"] if epochs_log else None,
             "val": val_loss,
         },
+        # Backward-compatible names retain their old meaning for fresh runs; for a
+        # resumed invocation the denominator must be the steps actually executed now,
+        # not the schedule's total target.
         "wall_seconds": elapsed,
-        "seconds_per_step": elapsed / max(1, total_steps),
+        "wall_seconds_this_invocation": elapsed,
+        "seconds_per_step": elapsed / max(1, trainer.global_step - start_step),
+        "seconds_per_step_this_invocation": elapsed / max(
+            1, trainer.global_step - start_step
+        ),
         "checkpoint": str(checkpoint),
         "checkpoint_sha256": sha256_file(checkpoint),
+        "trainer_checkpoint": str(trainer_checkpoint),
+        "trainer_checkpoint_sha256": sha256_file(trainer_checkpoint),
+        "resume": {
+            "resumed": args.resume is not None,
+            "resumed_from": resumed_from,
+            "start_epoch": start_epoch,
+            "checkpoint_every": args.checkpoint_every,
+            "checkpoints_written_this_invocation": checkpoints,
+            "claim_boundary": (
+                "State and schedule restore exactly; prior measurements allow up to 1e-2 "
+                "long-process parameter drift, so bit-exact resume is not claimed."
+            ),
+        },
         "ema": {
             "enabled": trainer.ema is not None,
             "decay": args.ema_decay,
             "warmup_steps": args.ema_warmup_steps,
             "optimization_step": None if trainer.ema is None else trainer.ema.optimization_step,
             "effective_decay": None if trainer.ema is None else trainer.ema.effective_decay(),
-            "trainer_checkpoint": None if trainer_checkpoint is None else str(trainer_checkpoint),
+            "trainer_checkpoint": str(trainer_checkpoint),
             "note": (
                 "EMA weights are the target for the flow-matching update in the paper; "
                 "this run keeps them in the trainer checkpoint only and evaluates the "
@@ -384,8 +562,28 @@ def main(argv=None) -> int:
             "no success rate is implied by the training loss",
         ],
     }
-    (out_dir / "summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
-    (out_dir / "epochs.json").write_text(json.dumps(epochs_log, indent=2) + "\n", encoding="utf-8")
+    write_json_atomic(out_dir / "summary.json", summary)
+    write_json_atomic(epochs_path, epochs_log)
+    write_json_atomic(
+        out_dir / "progress.json",
+        {
+            "status": "completed",
+            "target_epochs": args.epochs,
+            "completed_epochs": target_epoch,
+            "global_step": trainer.global_step,
+            "policy_checkpoint": {
+                "path": str(checkpoint),
+                "sha256": summary["checkpoint_sha256"],
+            },
+            "trainer_checkpoint": {
+                "path": str(trainer_checkpoint),
+                "sha256": summary["trainer_checkpoint_sha256"],
+            },
+            "resumed_from": resumed_from,
+            "claim_boundary": summary["resume"]["claim_boundary"],
+        },
+    )
+    (out_dir / "partial_summary.json").unlink(missing_ok=True)
     print(json.dumps(summary, indent=2))
     return 0
 

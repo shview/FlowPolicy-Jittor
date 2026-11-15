@@ -20,6 +20,54 @@ MetaWorld 脚本专家
 - 管线打通和当前低预算实验使用 `reach-v3` 与 `button-press-wall-v3`；`reach-wall-v3` 只保留为后续扩展候选，不混入现有结果（专家探测见 `env/metaworld_contract.md`）。
 - 闭环评测通过进程桥完成：策略在 Jittor 环境，仿真在隔离的 sim-env（`scripts/sim_server.py` + `scripts/rollout.py`，见 D017）。
 
+## 新机器快速开始
+
+下面以 Linux/WSL、Python 3.10 为例。训练与仿真使用两个隔离环境，避免 MuJoCo 依赖进入
+Jittor 训练环境：
+
+```bash
+git clone https://github.com/shview/FlowPolicy-Jittor.git
+cd FlowPolicy-Jittor
+
+# 1. Jittor 训练与测试环境
+python3.10 -m venv .venv
+. .venv/bin/activate
+python -m pip install --upgrade pip setuptools wheel
+python -m pip install -e ".[test]"
+python scripts/check_environment.py --strict-train --allow-cpu
+python -m pytest -q
+
+# 2. 独立 MetaWorld/MuJoCo 仿真环境
+deactivate
+python3.10 -m venv .sim-env
+.sim-env/bin/python -m pip install --upgrade pip setuptools wheel
+.sim-env/bin/python -m pip install \
+  "mujoco==3.3.7" "metaworld==3.0.0" "numpy==1.26.4" \
+  "zarr>=2.12,<3" "imageio==2.37.0" "imageio-ffmpeg==0.6.0" "pillow==11.3.0"
+export FLOWPOLICY_SIM_PYTHON="$PWD/.sim-env/bin/python"
+```
+
+先探测专家，再生成一条示范；训练和 rollout 回到 Jittor 环境执行：
+
+```bash
+MUJOCO_GL=egl "$FLOWPOLICY_SIM_PYTHON" scripts/task_probe.py \
+  --task reach-wall-v3 --variants 10
+MUJOCO_GL=egl "$FLOWPOLICY_SIM_PYTHON" scripts/record_demos.py \
+  --record --task reach-wall-v3 --episodes 1 --max-steps 120 \
+  --output data/reach-wall-v3.zarr
+
+. .venv/bin/activate
+python scripts/train_smoke.py --data data/reach-wall-v3.zarr \
+  --epochs 2 --checkpoint-every 1 --out outputs/quick-start
+python scripts/rollout.py --data data/reach-wall-v3.zarr \
+  --checkpoint outputs/quick-start/policy.ckpt --task reach-wall-v3 \
+  --sim-python "$FLOWPOLICY_SIM_PYTHON" --episodes 1 \
+  --out outputs/quick-start-rollout
+```
+
+仓库不包含 Zarr 数据和 checkpoint。完整环境差异、EGL 配置与云端命令见
+[环境说明](docs/ENVIRONMENT.md)和[阿里云记录](docs/CLOUD_ALIYUN.md)。
+
 ## 当前状态
 
 - [x] 固定官方基线版本：FlowPolicy commit `86d10c1`。
@@ -44,6 +92,7 @@ MetaWorld 脚本专家
 - [x] CPU 回归基线：`213 passed, 1 skipped`；主环境跳过的 PyTorch parity 已在独立 parity-env 完成 170 项检查。
 - [x] GPU 可行性验证：A10 23 GB、CUDA 12.1、Jittor 1.3.11；`reach-v3` 真实数据完成 34 次参数更新并保存 checkpoint。
 - [x] A10 论文结构有限预算实验：完整通道、3 seeds、每 seed 30 epochs + 20 个闭环 episode，配置、哈希和逐回合结果均已保存。
+- [x] `reach-wall-v3` 本地门槛：10/10 专家变体合格；20 条正式示范可确定性重录；真实数据的计划停止/恢复训练和 5-episode 闭环 smoke 已通过。
 
 ### A10 论文结构有限预算结果（NFE=1）
 
@@ -73,6 +122,8 @@ MetaWorld 脚本专家
 <https://github.com/shview/FlowPolicy-Jittor>；这不改变实验边界，仍不能写成“论文成功率已复现”。
 
 阿里云环境、持久化路径、复跑命令和证据边界见 [云端环境记录](docs/CLOUD_ALIYUN.md)。
+`reach-wall-v3` 的公开脱敏证据见 [FPJ-033 preliminary bundle](evidence/fpj033/preliminary/manifest.json)：
+它只覆盖本地专家、数据、恢复训练和 5-episode smoke，完整通道三 seed 云端结果仍未完成。
 
 公开代码在默认 `horizon=4 / n_obs_steps=2 / n_action_steps=4` 下从索引 1 开始切动作，因此实际只返回 3 步。本项目默认保留这一 `code-faithful` 行为，同时提供显式 `action_slice_mode="exact"` 对照；不会把修正后的 4 步结果混入基线。
 

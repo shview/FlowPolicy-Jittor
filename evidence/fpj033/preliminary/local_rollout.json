@@ -1,0 +1,120 @@
+{
+  "action_slice_mode": "code",
+  "checkpoint": "policy.ckpt",
+  "checkpoint_extra_keys": [],
+  "checkpoint_fresh_policy_reload_max_abs_delta": 0.0,
+  "checkpoint_reload_max_abs_delta": 0.0,
+  "checkpoint_repeat_max_abs_delta": 0.0,
+  "checkpoint_same_object_reload_max_abs_delta": 0.0,
+  "checkpoint_sha256": "bb15aee3f3855a0cd6f53e823c547c0cfa48ec01046e8cded2556f0db847793b",
+  "data": "reach-wall-v3.zarr",
+  "device": "cpu",
+  "episode_count": 5,
+  "episodes": [
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 0,
+      "index": 0,
+      "policy_latency_ms": {
+        "mean": 2.862578507038459,
+        "p95": 3.5853578054229724
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 1,
+      "index": 1,
+      "policy_latency_ms": {
+        "mean": 2.9452396873836477,
+        "p95": 3.83810600178549
+      },
+      "steps": 200,
+      "success": true,
+      "success_steps": 61
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 2,
+      "index": 2,
+      "policy_latency_ms": {
+        "mean": 2.91549691012991,
+        "p95": 3.7995420934748836
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 3,
+      "index": 3,
+      "policy_latency_ms": {
+        "mean": 2.8118299867231538,
+        "p95": 3.6430899053812027
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    },
+    {
+      "action_chunks": 67,
+      "done_reason": "step_cap",
+      "episode": 4,
+      "index": 4,
+      "policy_latency_ms": {
+        "mean": 2.8903605218771706,
+        "p95": 3.662541501398664
+      },
+      "steps": 200,
+      "success": false,
+      "success_steps": 0
+    }
+  ],
+  "evidence_status": "five-episode local smoke; failures are retained; not a formal success-rate estimate",
+  "model_config": {
+    "down_dims": [
+      32,
+      64
+    ],
+    "embed_dim": 32,
+    "encoder_out": 64,
+    "kernel_size": 3,
+    "n_groups": 8,
+    "pointnet_out": 64,
+    "var_fc_hidden_dim": 64
+  },
+  "n_action_steps": 4,
+  "n_obs_steps": 2,
+  "nfe": 1,
+  "num_points": 1024,
+  "policy_action_bounds": [
+    1,
+    5
+  ],
+  "policy_horizon": 4,
+  "prohibited_claims": [
+    "fewer than the declared formal episode count is not a success-rate measurement",
+    "matching the paper architecture does not imply matching its training recipe or simulator"
+  ],
+  "sim_python": "$FLOWPOLICY_SIM_PYTHON",
+  "simulator": {
+    "action_dim": 4,
+    "image_size": 128,
+    "ok": true,
+    "point_count": 1024,
+    "seed": 0,
+    "task": "reach-wall-v3",
+    "variants": 50
+  },
+  "success_episodes": 1,
+  "task": "reach-wall-v3",
+  "total_steps": 1000,
+  "wall_seconds": 205.87285963099566
+}
