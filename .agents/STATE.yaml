@@ -37,13 +37,13 @@ current:
   task_id: FPJ-032
   title: "Cloud GPU feasibility, paper-scale training and defense materials"
   attempt: 1
-  stage: implementation
-  status: in_progress
-  owner: /root
-  last_handoff_id: FPJ032-IMPL-01
-  next_stage: verification
+  stage: verification
+  status: ready
+  owner: null
+  last_handoff_id: FPJ032-IMPL-02
+  next_stage: anti_pattern
   role_handoffs:
-    implementation: null
+    implementation: FPJ032-IMPL-02
     verification: null
     anti_pattern: null
     quality: null

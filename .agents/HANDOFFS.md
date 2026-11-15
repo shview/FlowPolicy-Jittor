@@ -2084,5 +2084,44 @@
   - bit-exact long-process save/resume.
 - Recommended next role: resume implementation only after the user chooses GPU work or specifies the defense deliverable; repository commit/push requires explicit authorization.
 
+## FPJ032-IMPL-02
+
+- Task: FPJ-032 cloud GPU feasibility, full-channel limited-budget experiment and initial publication
+- Role completed: implementation
+- Result: passed
+- Owner: /root
+- Files changed in this continuation:
+  - `.gitignore` (root-anchor artifact directories so `src/flowpolicy_jittor/data` is publishable)
+  - `.agents/STATE.yaml` (record the publication state and remove the resolved ignore-rule gap)
+  - `.agents/HANDOFFS.md` (this append-only record)
+- Commands run:
+  - `git check-ignore -v data/reach-v3.zarr outputs/cuda/report.json checkpoints/example.pkl`
+  - `git check-ignore -q src/flowpolicy_jittor/data/dataset.py`
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q`
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python scripts/validate_agent_state.py`
+  - `git commit -m "Initial Jittor reproduction of FlowPolicy"`
+  - `git push -u origin main`
+- Exact results:
+  - root artifact paths remain ignored; `src/flowpolicy_jittor/data/dataset.py` is no longer ignored;
+  - publish candidate set contained 62 files / 691128 bytes and no staged dataset, output, checkpoint or file above 10 MiB;
+  - secret-pattern filename scan found no common private-key or access-token signature;
+  - full regression: `213 passed, 1 skipped, 8 warnings in 180.55s`; the skipped PyTorch module is not counted as passed;
+  - root commit `560df9c` pushed to `https://github.com/shview/FlowPolicy-Jittor` on `main`;
+  - GitHub page independently showed the commit, source tree, README and MIT license.
+- Preserved evidence from the earlier implementation work:
+  - A10/CUDA 12.1 real Jittor kernels, real-data updates, full-channel feasibility and headless simulation passed;
+  - full `512/1024/2048` configuration completed 3 seeds x 30 epochs x 20 episodes on `button-press-wall-v3`;
+  - all local evidence remains outside the public repository under the documented artifact/data/output paths.
+- Remaining risks:
+  - the 100% result has a ceiling effect and covers only one easy task;
+  - detached EMA target is not implemented;
+  - no paper-scale 3000-epoch or 37-task claim is allowed.
+- Prohibited claims:
+  - paper success rate reproduced;
+  - full paper recipe completed;
+  - detached EMA target used;
+  - skipped test counted as passed.
+- Recommended next role: verification
+
 
 
