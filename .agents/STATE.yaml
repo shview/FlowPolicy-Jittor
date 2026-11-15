@@ -34,66 +34,71 @@ baseline:
   note: "Do not count the skipped PyTorch parity module as passed. The previously intermittent test_top_level_adamw_updates_active_but_not_frozen_parameters was hardened in FPJ-030 (explicit seed, measured assertion) and passed 20/20 single runs plus 3/3 whole-file runs; the original failure was never reproduced, so no root cause is claimed."
 
 current:
-  task_id: FPJ-032
-  title: "Cloud GPU feasibility, paper-scale training and defense materials"
-  attempt: 2
-  stage: verification
+  task_id: FPJ-033
+  title: "Harder MetaWorld task and full-channel limited-budget experiment"
+  attempt: 1
+  stage: implementation
   status: ready
   owner: null
-  last_handoff_id: FPJ032-IMPL-03
-  next_stage: anti_pattern
+  last_handoff_id: FPJ032-GATE-01
+  next_stage: verification
   role_handoffs:
-    implementation: FPJ032-IMPL-03
+    implementation: null
     verification: null
     anti_pattern: null
     quality: null
     gate: null
   objective: >-
-    Configure the user-provided Alibaba Cloud A10 instance, verify real Jittor CUDA,
-    real-data training, the full paper channel configuration and headless simulation,
-    then run and preserve a three-seed full-channel limited-budget GPU experiment with
-    exact commands, hashes, per-episode results and evidence boundaries.
+    Add a harder MetaWorld task, preferably reach-wall-v3 after a multi-variant expert-quality
+    gate, then run a reproducible three-seed full-channel limited-budget comparison only after
+    local data, smoke, periodic-checkpoint and resume checks pass. Publish a sanitized evidence
+    bundle and portable fresh-machine instructions without claiming the paper recipe.
   scope:
     allowed_paths:
       - .gitignore
+      - pyproject.toml
       - README.md
       - docs/**
       - scripts/**
+      - src/**
+      - tests/**
+      - evidence/**
+      - data/reach-wall-v3.zarr/**
+      - outputs/fpj033/**
       - .agents/STATE.yaml
       - .agents/HANDOFFS.md
       - .agents/QUEUE.md
     forbidden_paths:
       - ../flowpolicy-upstream/**
-      - data/**
+      - data/reach-v3.zarr/**
+      - data/button-press-wall-v3.zarr/**
   acceptance:
-    - "README, reproduction plan, environment guide, defense guide and queue agree on the tasks, simulator stack, completed work and resume tolerance."
-    - "A hardware-compatible CUDA environment is available before any GPU number is claimed (A10 verified on CUDA 12.1; local Blackwell would require a newer toolkit)."
-    - "Real Zarr data performs CUDA backward/update and writes a reloadable checkpoint."
-    - "The full 512/1024/2048 channel configuration records one measured CUDA feasibility step without calling it paper-scale training."
-    - "The isolated Meta-World/MuJoCo environment produces RGB, point clouds and a closed-loop bridge result without a real robot."
-    - "Paper-scale runs record their own hardware, config and checkpoint fingerprints."
-    - "No paper success rate is claimed from the CPU low-budget grid."
+    - "Probe reach-wall-v3 over at least 10 task variants and record expert success, first-success steps and suitability before collecting formal demonstrations; do not silently substitute another task."
+    - "Create and validate deterministic reach-wall-v3 Zarr demonstrations without modifying the two existing formal datasets."
+    - "Add periodic trainer checkpoints and a tested CLI resume path before any costly cloud training; retain the documented long-process numerical tolerance instead of claiming bit-exact resume."
+    - "Complete a local low-budget train/rollout smoke with explicit failure reporting before the full-channel run."
+    - "If cloud execution proceeds, use the full 512/1024/2048 configuration, 3 training seeds and 20 rollout episodes per seed, recording hardware, budget, hashes, losses, latency, memory and every episode."
+    - "Publish a sanitized evidence bundle containing summaries/manifests/hashes and episode results but no dataset, checkpoint, secret or private absolute path."
+    - "README provides a fresh-machine quick start and portable explicit simulator interpreter commands; a fresh-clone check is recorded."
+    - "Any comparison with button-press-wall-v3 uses matched point count, model, seed count and budget, and is labeled full-channel limited-budget rather than the paper result."
   required_commands:
     - >-
       wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python
       -m pytest -q
 
 known_gaps:
-  - "The Alibaba Cloud DSW instance was stopped at 2026-11-15 16:23. Its free mounted disk is retained for only 15 days while stopped, so any second-task run must restart it within that window or restore from locally preserved code and evidence."
-  - "Local WSL CUDA remains unavailable, but Alibaba Cloud A10/CUDA 12.1 executed real Jittor kernels, 34 real-data updates and one full-channel CUDA update on 2026-11-15. Existing low-budget experiment-table numbers remain CPU-only."
-  - "The full 512/1024/2048-channel configuration completed 3 seeds x 30 epochs x 1050 updates on A10 and 3 x 20 closed-loop episodes: all three seeds were 20/20, mean policy latency 3.811 ms and peak monitored memory 10726 MiB. This is a one-task limited-budget result, not the paper recipe."
-  - "PyTorch parity is measured for the small test configuration only (170 checks, worst deviation 1.6e-09); it is not a claim about paper-scale models."
-  - "EMA weights are tracked and checkpointed but the loss still uses the online model for v_r (target_mode='code', D018); the paper's detached target is not implemented."
-  - "The simulator is a documented substitute (metaworld 3.0/mujoco 3.3 vs the paper's 2.0/mujoco-py), so clouds cannot match the paper point by point (D016)."
-  - "The formal experiment grid is a low-budget CPU run: 10 epochs, small channels, 10-20 demonstrations; the measured rates (button-press-wall-v3 83.33% +/- 20.82%, reach-v3 11.67% +/- 2.89%) are not the paper's numbers."
-  - "A trained long process can drift by up to 5.49e-3 after save/resume; state and schedule restore exactly, but bit-exact trajectory resume is not claimed (D014, FPJ-031)."
+  - "reach-wall-v3 has only a one-episode preliminary expert probe (first success 159/200); formal data quality and non-ceiling policy behavior are not yet established."
+  - "The Alibaba Cloud DSW instance is stopped and its free system-disk retention window is finite; do not start a costly run before local gates, resume support and budget checks pass."
+  - "Local WSL CUDA remains unavailable; any full-channel training result must identify the A10/CUDA environment explicitly."
+  - "The public repository is source-complete but does not yet contain a sanitized experiment evidence bundle or a verified fresh-machine quick start."
+  - "The training CLI does not yet expose periodic checkpoints or resume even though trainer state restore exists."
+  - "EMA weights are stored but the loss still uses target_mode='code'; detached EMA is scheduled for FPJ-034, not this task."
+  - "The modern MetaWorld/MuJoCo stack is a documented substitute and cannot be claimed pixel-identical to the paper stack."
 
 prohibited_claims:
   - "paper success rate reproduced"
-  - "PyTorch parity completed for paper-scale models"
   - "EMA target used in training"
-  - "end-to-end paper-scale training completed"
-  - "the one-step full-channel run is paper-scale training"
-  - "the low-budget grid is comparable to the paper's evaluation"
-  - "the one-task 30-epoch A10 run is the paper's full 3000-epoch recipe"
+  - "reach-wall-v3 full-channel result completed before all seeds and episode records exist"
+  - "full-channel limited-budget result is the paper's 3000-epoch or 37-task result"
+  - "public evidence bundle contains raw datasets or checkpoints"
   - "bit-exact save/resume"

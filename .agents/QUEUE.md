@@ -82,20 +82,40 @@ Gate `FPJ031-GATE-01` 通过。新增 `scripts/determinism_probe.py`（逐步权
 因此把承诺收窄为“状态恢复与调度逐位精确、长进程内续训在 `1e-2` 容差内”，
 `tests/test_trainer.py` 的容差按实测从 `2e-3` 改为 `1e-2` 并写明依据。基线 `208 → 213 passed, 1 skipped`。
 
+### [x] FPJ-032：云端 GPU 可行性、完整通道有限预算训练与首次发布
+
+Gate `FPJ032-GATE-01` 通过。A10/CUDA 12.1 上完成真实 Jittor CUDA、真实 Zarr 更新、
+完整 `512/1024/2048` 通道单步与 EGL 闭环验证；`button-press-wall-v3` 以 batch 64、
+30 epochs、3 seeds 各 1050 updates，并完成 3 × 20 rollout，结果为 20/20、20/20、20/20，
+策略延迟 `3.811 ± 0.016 ms`、峰值显存 10726 MiB。三个 checkpoint/data/config 哈希、训练曲线和
+逐 episode JSON 已保存。代码已发布到 `https://github.com/shview/FlowPolicy-Jittor`，仓库未跟踪
+数据集、输出、checkpoint、密钥或大文件。该结果是单任务完整通道有限预算证据，不是论文
+3000 epochs / 37 任务配方；基线保持 `213 passed, 1 skipped`。
+
 ## 当前任务
 
-### [>] FPJ-032：云端 GPU 可行性、论文规模训练与答辩材料
+### [>] FPJ-033：更难 MetaWorld 任务与完整通道有限预算实验
 
-- 2026-11-15 已同步 README、复现计划、环境说明、决策记录和答辩指南，统一现有 CPU 证据与限制口径；
-- 本机 CUDA 仍不可用；用户已提供阿里云 PAI-DSW A10 公共资源实例；
-- A10/CUDA 12.1 已通过真实 Jittor CUDA、真实 Zarr 小通道训练、完整 512/1024/2048 通道单步和 EGL 仿真验证；
-- 完整通道以 batch 64、30 epochs、3 seeds 各训练 1050 步，并各做 20 个闭环 episode；结果均为 20/20，
-  策略延迟 3.811 ± 0.016 ms、峰值显存 10726 MiB；这是单任务有限预算结果，不是论文完整配方；
-- 三个训练摘要、epoch 曲线、逐回合 rollout、checkpoint/data/config SHA256 和总汇总已经保存到本地证据目录；
-- 实例于 2026-11-15 16:23 手动停止，控制台累计服务时长约 2 小时 39 分钟；免费云盘停机只保留 15 天；
-- 答辩材料（幻灯片、demo 视频、逐帧失败案例回放）需要用户确认形式与时间；
-- 代码、实验与首次 GitHub 发布已经完成，FPJ-032 仍需通过串行 verification / anti-pattern / quality / gate；
-  gate 后的下一项优先第二个难任务或失败案例，不优先增加第 4、5 个容易任务 seed。
+- 首选 `reach-wall-v3`：它在上游 FlowPolicy 配置中存在，本机脚本专家初步探测为 159/200，
+  但必须先做多 variant 专家质量探测；若不合格，不能静默换任务，需先更新任务记录；
+- 本地阶段先完成正式示范、数据契约检查、低预算 smoke、失败类型记录和可中断恢复的训练 CLI；
+- 云端阶段沿用完整 `512/1024/2048` 通道、3 seeds × 20 episodes 的同口径有限预算，
+  只有本地门槛与恢复测试通过后才启动 A10；不得把结果写成论文 3000 epochs 配方；
+- 发布脱敏证据包（配置、manifest、哈希、训练摘要与逐回合结果，不含数据集/checkpoint/私有路径），
+  并补 README 新机器 quick start 与显式 `--sim-python` 用法；
+- 该任务结束后依次进行 FPJ-034（detached EMA target）和 FPJ-035（code target vs detached target 对照）。
+
+## 后续顺序
+
+### [ ] FPJ-034：论文式 detached EMA target
+
+实现、保存、恢复并验证真正用于 `v_r` 的 detached EMA 副本；先做小配置梯度和显存测试，
+不能只加 `stop_gradient` 就称为 paper-faithful。
+
+### [ ] FPJ-035：target 语义对照
+
+在相同任务、示范、seed、点数和训练预算下比较 released-code target 与 detached EMA target；
+先报告损失、稳定性与资源开销，再决定是否值得扩到完整通道。
 
 ## 测试可靠性
 

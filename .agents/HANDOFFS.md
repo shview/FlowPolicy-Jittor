@@ -2211,5 +2211,153 @@
 - Remaining risks and prohibited claims: unchanged from `FPJ032-VERIFY-01`.
 - Recommended next role: verification
 
+## FPJ032-VERIFY-02
+
+- Task: FPJ-032 publication-state documentation retry
+- Role completed: verification
+- Result: passed
+- Owner: /root/fpj032_verification
+- Product files changed: none (read-only verification)
+- Coordination files changed:
+  - `.agents/STATE.yaml`
+  - `.agents/HANDOFFS.md` (this append-only record)
+- Commands run and exact results:
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q`
+    - exit 0; `213 passed, 1 skipped, 8 warnings in 183.19s`;
+    - skipped: `tests/test_conv1d_parity.py` because PyTorch is absent from the core Jittor environment; it is not counted as passed.
+  - `git diff --exit-code 031d485..ae289a6 -- src tests scripts pyproject.toml`
+    - exit 0; no source, test, script or package metadata changed in the retry.
+  - focused stale-statement and replacement checks
+    - all four previous blockers are resolved: README publication status, reproduction checklist, queue review stage and AGENTS first-commit statement;
+    - README still states that the result is not the paper success rate.
+  - independent publication-hygiene checks
+    - `git ls-tree -r ae289a6` contains no root data/output/checkpoint/wandb/artifact or `.zarr/` path;
+    - common private-key/token signature scan found none;
+    - no measured-result literal (`255138308`, channel sizes, success counts, latency, memory, losses or CPU rates) changed in the retry diff.
+  - ref check
+    - `HEAD=ae289a66979b8989bf5c1722a962f01c5157d4a4`;
+    - `origin/main=ae289a66979b8989bf5c1722a962f01c5157d4a4`.
+- Acceptance status:
+  - the documentation synchronization blocker from `FPJ032-VERIFY-01` is fixed;
+  - the prior independent A10 artifact recomputation and cloud-evidence checks remain applicable because the retry changed no executable or experiment artifact;
+  - all FPJ-032 acceptance items are verified at this stage, subject to anti-pattern, quality and gate review.
+- Remaining risks and prohibited claims: unchanged; especially no paper success-rate, 3000-epoch/37-task, detached-EMA or bit-exact claim.
+- Recommended next role: anti_pattern
+
+## FPJ032-AP-01
+
+- Task: FPJ-032 cloud/publication anti-pattern review
+- Role completed: anti_pattern
+- Result: passed (no P1/blocker)
+- Owner: /root/fpj032_anti_pattern
+- Product files changed: none (read-only review)
+- Coordination files changed:
+  - `.agents/STATE.yaml`
+  - `.agents/HANDOFFS.md` (this append-only record)
+- Adversarial checks and exact results:
+  - `git ls-tree -r --name-only HEAD` filtered for root `data/`, `outputs/`, `checkpoints/`, `wandb/`, `artifacts/`, `.zarr` and model/array extensions: `none`;
+  - `git log --all --name-only` with the same artifact filter: `none`, so deleted historical commits do not hide such paths;
+  - all reachable blobs were sized; largest was `.agents/HANDOFFS.md` at 129242 bytes, with no large binary/model object;
+  - tracked-text scan for common AWS/GitHub/OpenAI/private-key/Aliyun-secret signatures: `none`;
+  - root artifact paths remain ignored while `src/flowpolicy_jittor/data/dataset.py` remains visible/tracked;
+  - local `HEAD` and `origin/main` both resolved to `ae289a6` before this coordination-only handoff;
+  - no `214 passed` claim was found; current sources consistently say `213 passed, 1 skipped`, and `docs/REPRODUCTION_PLAN.md:271` explicitly says the skip is not counted as passed;
+  - task names are separated correctly: README/results use `reach-v3` and `button-press-wall-v3`; `reach-wall-v3` is only a future candidate (`README.md:20`, `docs/REPRODUCTION_PLAN.md:205-208`);
+  - local CPU and cloud A10 evidence are separated (`README.md:59-68`, `docs/DEFENSE_GUIDE.md:152-160`, `.agents/STATE.yaml:83-88`);
+  - one-step feasibility and 30-epoch/one-task training are not presented as the paper recipe (`README.md:48-57`, `docs/REPRODUCTION_PLAN.md:194-201`, `docs/CLOUD_ALIYUN.md:63,84-89`);
+  - detached EMA is explicitly absent (`README.md:55-56`, `docs/DEFENSE_GUIDE.md:155-157`, `.agents/STATE.yaml:86`).
+- Findings:
+  - P2 (non-blocking): the public README cites ignored/local evidence paths (`README.md:40,43,57,68`), so a GitHub reader cannot inspect the raw parity/experiment JSON without rerunning commands or receiving a separate evidence bundle. The README is transparent that the A10 evidence is in the corresponding workspace, so this is a publication-completeness issue, not a false claim.
+  - P3 (non-blocking): the historical task title still says “paper-scale/论文规模 training” (`.agents/STATE.yaml:38`, `.agents/QUEUE.md:87`) even though all result sections correctly say limited budget. Future task naming should prefer “full-channel limited-budget experiment” to reduce headline-level ambiguity.
+  - P3 (non-blocking): append-only historical handoffs contain obsolete facts by design; current-state claims must continue to cite STATE/README rather than old handoff paragraphs.
+- Remaining risks:
+  - evidence JSON/screenshots are local and must be preserved separately until a sanitized public evidence bundle is intentionally added;
+  - the 100% full-channel result still has a one-task ceiling effect;
+  - detached EMA target, second full-channel task, 3000 epochs and 37-task coverage remain incomplete.
+- Prohibited claims:
+  - paper success rate reproduced;
+  - paper-scale/37-task/3000-epoch recipe completed;
+  - detached EMA target used;
+  - local CUDA available;
+  - skipped test counted as passed.
+- Recommended next role: quality
+
+## FPJ032-QUAL-01
+
+- Task: FPJ-032 cloud/publication quality review
+- Role completed: quality
+- Result: passed (no P1/blocker)
+- Owner: /root/fpj032_quality
+- Product files changed: none (read-only review)
+- Coordination files changed:
+  - `.agents/STATE.yaml`
+  - `.agents/HANDOFFS.md` (this append-only record)
+- Interface and usability checks:
+  - all five public entry points returned usable `--help` output with exit 0: `check_environment.py`, `train_smoke.py`, `rollout.py`, `experiments.py` and `record_demos.py`;
+  - `import flowpolicy_jittor` succeeded in the documented local environment and reported version `0.1.0`;
+  - every relative Markdown link in README/docs resolved locally;
+  - package metadata pins Jittor and bounded NumPy/Zarr/PyYAML dependencies, and third-party provenance identifies the audited FlowPolicy commit and Jittor source;
+  - output/data writers retain refusal-to-overwrite defaults, while CLI help exposes explicit `--overwrite` / `--reuse` controls where applicable.
+- Counterexamples constructed:
+  1. Fresh GitHub clone: the README contains no install/quick-start commands, while every cited `data/`, `outputs/` and `artifacts/` result path is intentionally untracked. A reader can understand the results but cannot reproduce them from README alone.
+  2. Different Linux username: documented rollout/grid commands omit `--sim-python`, but `scripts/rollout.py:37` and `scripts/experiments.py:36` default to `/home/s/.local/share/flowpolicy/sim-env/bin/python`; the CLI override exists, yet the default is not portable.
+  3. Interrupted long run: `scripts/train_smoke.py:175-205` exposes no resume argument and only writes final policy/trainer checkpoints at lines 308-315. A future 3000-epoch run would restart after interruption rather than resume, despite trainer-level restore support.
+  4. Independent evaluator: README cites `outputs/parity/parity.json`, `outputs/cuda/report.json`, `outputs/experiments/SUMMARY.md` and `artifacts/aliyun_dsw/formal_pilot_20261115/`, but none is in the Git tree; raw A10 numbers cannot be audited from the public repository alone.
+- Findings:
+  - P1: none.
+  - P2 (non-blocking): add a compact README quick start covering two environments, editable install, demonstration generation, training, rollout and tests before calling the public repository self-contained. `docs/REPRODUCTION_PLAN.md` honestly leaves “new machine follows README” unchecked, so this is not a false completion claim.
+  - P2 (non-blocking): replace the user-specific simulator interpreter default with a portable configuration mechanism or document `--sim-python` in every public command.
+  - P2 (non-blocking): publish a small sanitized evidence bundle (summaries/manifests, not datasets or 255M-parameter checkpoints) so external readers can audit the reported tables and hashes.
+  - P2 (future-cost risk): add periodic trainer checkpoints and a tested CLI resume path before any 3000-epoch or other costly cloud run.
+  - P3 (non-blocking): rename future task headings from “paper-scale/论文规模” to “full-channel limited-budget”; the body text already uses the correct boundary.
+- Positive boundaries:
+  - current docs clearly separate CPU from A10, full-channel limited-budget from the 3000-epoch/37-task paper recipe, and stored EMA state from a detached EMA loss target;
+  - missing public evidence, videos, second full-channel task and fresh-machine README validation are explicitly disclosed rather than marked complete.
+- Remaining risks and prohibited claims:
+  - the public repository is source-complete but not yet evidence-complete or fresh-machine-quick-start complete;
+  - no paper success-rate, 3000-epoch/37-task, detached-EMA, local-CUDA or bit-exact-resume claim is allowed.
+- Recommended next role: gate
+
+## FPJ032-GATE-01
+
+- Task: FPJ-032 cloud GPU feasibility, full-channel limited-budget experiment and initial publication
+- Role completed: gate
+- Result: passed
+- Owner: /root/fpj032_gate
+- Five-role evidence chain:
+  - implementation: `FPJ032-IMPL-03` (with prior experimental/publication evidence in `FPJ032-IMPL-01/02`);
+  - verification: `FPJ032-VERIFY-02`;
+  - anti-pattern: `FPJ032-AP-01`;
+  - quality: `FPJ032-QUAL-01`;
+  - gate: this record.
+- Gate command and exact result:
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q`
+  - exit 0; `213 passed, 1 skipped, 8 warnings in 150.82s`;
+  - skipped `tests/test_conv1d_parity.py` because PyTorch is absent from the core Jittor environment; it is not counted as passed.
+- Acceptance decisions:
+  1. documentation synchronization: passed after attempt-2 fixes and independent stale-statement/link checks;
+  2. hardware-compatible CUDA before GPU claims: passed on A10/CUDA 12.1, while local CUDA remains explicitly unavailable;
+  3. real Zarr CUDA update and reloadable checkpoint: passed (34 updates plus saved checkpoint evidence);
+  4. full 512/1024/2048 feasibility without paper-scale wording: passed (255138308 parameters, finite update, explicit one-step boundary);
+  5. isolated RGB/point-cloud/closed-loop simulator: passed (EGL RGB, 1024 points, 9-D state and process bridge);
+  6. run fingerprints: passed (hardware/config/data/checkpoint hashes and per-episode results independently recomputed);
+  7. no paper-success claim from CPU grid: passed; README and defense guide retain the low-budget/non-comparable boundary.
+- Gate decision:
+  - no unhandled P1/blocker;
+  - FPJ-032 is complete;
+  - baseline remains `213 passed, 1 skipped`;
+  - activate FPJ-033, then FPJ-034 and FPJ-035 in the user's agreed order.
+- Non-blocking quality debt carried into FPJ-033 acceptance:
+  - fresh-machine README quick start and portable simulator path;
+  - sanitized public evidence bundle;
+  - periodic checkpoint plus tested CLI resume before another costly run;
+  - future headings use “full-channel limited-budget,” not “paper-scale.”
+- Prohibited claims remain:
+  - paper success rate or 3000-epoch/37-task recipe reproduced;
+  - detached EMA target used;
+  - local CUDA available;
+  - skipped test counted as passed.
+- Recommended next role: FPJ-033 implementation
+
 
 
