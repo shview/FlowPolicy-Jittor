@@ -8,7 +8,7 @@
 2. **方法**：FlowPolicy 用点云和机器人状态作为条件，通过一致性流匹配学习一次网络求值即可完成的动作生成。
 3. **复现难点**：官方实现是 PyTorch，公开代码与论文在点数、EMA target 等细节上有差异，旧版 MuJoCo 环境也有兼容成本。
 4. **我的工作**：用 Jittor 重写训练核心；建立数据、数值和仿真三级验证；明确修正和保留了哪些上游行为。
-5. **结果**：同时比较成功率和速度，并展示失败案例，而不是只展示最好视频。
+5. **结果**：同时比较成功率和速度，并说明失败类型，而不是只展示最好一次结果。
 6. **结论**：说明 Jittor 复现是否支持论文的核心主张，以及仍存在哪些限制。
 
 ## 2. 必须真正理解的五个问题
@@ -35,7 +35,7 @@ f_t = x_t + (s-t) v_t
 L = mean(||f_t-f_r||²) + α mean(mask · ||v_t-v_r||²)
 ```
 
-公开 `FlowPolicy.compute_loss()` 用同一个当前模型计算 `v_t` 和 `v_r`，两个分支都保留梯度；论文公式则把后一个预测写成 EMA 参数。项目默认保留前者作为 `code-faithful` 基线，另提供真正分离的 detached target：target 有自己的编码器和 U-Net，全部停止梯度，只在在线 optimizer step 之后由 EMA 更新。小通道三 seed 与完整通道单 seed 对照均已完成，但这仍不是论文 3000 epochs 的完整配方。
+公开 `FlowPolicy.compute_loss()` 用同一个当前模型计算 `v_t` 和 `v_r`，两个分支都保留梯度；论文公式则把后一个预测写成 EMA 参数。项目默认保留前者作为 `code-faithful` 基线，另提供真正分离的 detached target：target 有自己的编码器和 U-Net，全部停止梯度，只在在线 optimizer step 之后由 EMA 更新。小通道和完整通道的三 seed 对照均已完成，但这仍不是论文 3000 epochs 的完整配方。
 
 ### Q4：没有真实机械臂，复现是否成立？
 
@@ -52,7 +52,7 @@ L = mean(||f_t-f_r||²) + α mean(mask · ||v_t-v_r||²)
 - 当前已完成的 Jittor 部分：PointNet、状态编码器、Conditional U-Net、归一化器、CFM loss、顶层 policy、Zarr 数据集、训练器、AdamW、stored EMA、detached EMA target、policy/trainer checkpoint 和单步动作推理。
 - checkpoint 不只校验权重 shape，还固定本实现版本、Jittor 版本、网络、loss、NFE 和动作切片配置；保存前会从真实运行对象重建配置，加载失败会回滚，防止同一权重在 `code`/`exact` 模式下静默执行 3/4 步。
 - 已完成：真实示范训练、checkpoint 恢复、5-episode 管线 smoke、2 任务 × 3 seeds × 20 episodes 的 CPU 低预算闭环评测，以及两个任务的完整通道 A10 三 seed 有限预算训练与评测。
-- 尚未完成：论文 3000 epochs 长训练、完整通道 target 的多 seed 统计，以及成功/失败视频整理。不能把 30 epochs、现代替代仿真栈或单 seed 云端配对表述成完整论文配方复现。
+- 尚未完成：论文 3000 epochs 长训练和原版旧仿真栈逐项对齐。成功/失败视频不在本次交付范围内。完整通道 target 三 seed 已完成，但仍不能把 30 epochs 和现代替代仿真栈表述成完整论文配方复现。
 - 非 Jittor：MuJoCo 物理引擎、MetaWorld 环境、官方专家策略、Zarr 文件读写。
 - 点云 FPS 使用 NumPy 实现；训练与仿真链路不依赖 PyTorch。PyTorch 只在隔离的 parity-env 中作为数值参照，不能把这项对照混入 Jittor 训练图。
 
@@ -88,7 +88,7 @@ L = mean(||f_t-f_r||²) + α mean(mask · ||v_t-v_r||²)
 
 ## 4. 结果展示应避免的误区
 
-- 只放成功视频，不放失败类型。
+- 只报成功案例，不分析失败类型。
 - 只报最好 seed 或最好一次评测。
 - PyTorch 与 Jittor 使用不同示范或不同点数。
 - 把缩小网络的本机 smoke 结果写成完整复现结果。
@@ -169,6 +169,11 @@ detached target 改变了优化动态，三个 seed 都未超过 code，对应�
 - 完整通道 target 配对：A10 上两组各 1 seed × 20 episodes，code 为 10/20、detached 为 6/20；
   `evidence/fpj036/` 保留严格匹配配置、40 个逐回合结果、显存、loss、checkpoint 哈希与停机记录
   （D023）；
+- 完整通道 target 三 seed：FPJ-037 只补 seeds 1/2 并复用已发布 seed 0，code 为
+  28.33% ± 20.21%，detached 为 26.67% ± 20.21%；`evidence/fpj037/` 保留 120 个主比较 episode、
+  60 个 EMA/exact 诊断 episode 和全部哈希；
+- 公开证据索引和独立校验器：`evidence/README.md` 说明每个数字来自哪个文件，
+  `python scripts/verify_public_evidence.py` 会核对文件哈希并从逐回合记录重算统计量；
 - 跨框架 parity：独立 PyTorch 镜像对 action_pred / loss / 168 个梯度做对照，
   170 项检查、最差偏差 1.6e-09（`outputs/parity/parity.json`）；
 - 全通道（512/1024/2048）CPU 单步前反向：2.55 亿参数、约 4 s/step、峰值 4.5 GB；
@@ -184,8 +189,8 @@ detached target 改变了优化动态，三个 seed 都未超过 code，对应�
 
 - **本机 CUDA 仍未配置，但云端 A10 已验证**：本机 RTX 5060 缺少适配 Blackwell 的 toolkit；
   云端 A10 使用 CUDA 12.1。CPU 实验表仍然是 CPU 结果，不能因为云端可用就改写其来源；
-- **完整通道 target 只有一个配对 seed**：早期两个任务的三 seed GPU 表仍是 released-code target，
-  FPJ-036 另行补了 code/detached seed 0 对照；两套证据不能混成一个三 seed target 结果；
+- **FPJ-036 仍只是单 seed 可行性证据**：FPJ-037 才在不改写旧包的前提下补齐完整通道三 seed；
+  其 28.33% 对 26.67% 只适用于所选任务和 30 epochs，不能与早期不同配方结果混算；
 - **EMA 需要区分用途**：默认 loss 的 `v_r` 仍由当前模型给出；只有显式
   `target_mode="detached"` 且配置 `ema_decay` 时，独立 target 才参与 loss。已完成的小通道同预算对照
   只说明短预算下 detached 更差，不是对论文完整配方的否定；
@@ -194,12 +199,31 @@ detached target 改变了优化动态，三个 seed 都未超过 code，对应�
 - 示范数量少（10/20 条）；CPU 小通道结果与 A10 完整通道结果预算不同，不能直接归因于框架或只比较百分比；
 - FPJ-036 的每个 episode 都运行到 200-step cap，`success_steps` 表示成功状态出现的步数，不是首次成功时间。
 
-### “为什么云端只跑一个 seed？”
+### “为什么当时先只跑一个 seed？”
 
 这个实验的第一目标是确认 detached target 在 2.55 亿参数完整网络上的可行性和资源成本，不是重新做
 统计结论。一个配对 seed 已回答 CUDA、显存、loss、checkpoint 和闭环能否跑通；继续到三个 seed
-需要再训练四个单元，并且现有三 seed 小通道结果已经说明方差不能忽略。因此当前选择停止实例，
-如实保留“单 seed 方向性证据”，比把一个 seed 冒充稳定结论更合理。
+需要再训练四个单元，并且现有三 seed 小通道结果已经说明方差不能忽略。因此 FPJ-036 先停止实例，
+如实发布“单 seed 方向性证据”。FPJ-037 获得追加预算后才单独补 seeds 1/2，且新统计不会回写
+FPJ-036。这个顺序保留了每一步的证据边界。
+
+### 已完成的三 seed target 对照
+
+为了把“可运行”与“统计趋势”分开，FPJ-037 复用已经发布的 seed 0，只补跑 seeds 1/2。四个新训练
+单元、80 个新增 episode、配对配置和 checkpoint 哈希均已独立复核：
+
+| target | seed 0 | seed 1 | seed 2 | mean ± sample std |
+|---|---:|---:|---:|---:|
+| code | 10/20 | 5/20 | 2/20 | **28.33% ± 20.21%** |
+| detached | 6/20 | 9/20 | 1/20 | **26.67% ± 20.21%** |
+
+两种模式各有 60 个 episode，只差一个成功回合，且样本标准差相同。因此结果只把结论从“单 seed
+可行性”推进到“所选任务、30 epochs 下没有稳定排名”，仍不等于论文 3000 epochs、37 个任务或
+原版仿真栈结果。
+
+seed-1 的同 checkpoint 诊断为：code 在线/code 5/20、EMA/code 2/20、在线/exact 3/20；detached
+在线/code 9/20、EMA/code 10/20。这 60 个诊断 episode 不计入训练 seed，也不能据此宣布 EMA 或
+exact 切片普遍有效/无效。
 
 答辩时把“已验证事实 / 计划验证内容 / 推测”分开，并主动给出上面这份边界清单，
 比提前许诺论文级结果更可信；被问“为什么不宣称复现了论文指标”，照着这份清单回答即可。

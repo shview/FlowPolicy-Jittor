@@ -100,6 +100,8 @@ python scripts/rollout.py --data data/reach-wall-v3.zarr \
       数据、模型、seeds、710 次更新和 3 × 20 episodes，逐 seed 匹配检查与 120 个回合均已留证。
 - [x] `reach-wall-v3` A10 完整通道 target 配对：seed 0 下两组各训练 1050 步并评测 20 个
       episode；只改变 target 语义与 EMA 角色，证据和实例停机状态均已保存。
+- [x] 完整通道 target 三 seed 扩展：复用已发布 seed 0，只补 seeds 1/2；120 个闭环 episode、
+      配对配置和 checkpoint 哈希均已复核，并单列 60 个 EMA/exact 诊断 episode。
 
 ### A10 论文结构有限预算结果（NFE=1）
 
@@ -157,17 +159,41 @@ target 语义影响，数值也不能直接当作跨模式的任务性能指标�
 checkpoint 重载最大动作差分别为 `2.08e-5` 和 `1.19e-7`，均为小的非零误差。完整记录见
 [`evidence/fpj036/manifest.json`](evidence/fpj036/manifest.json)（D023）。
 
+### 完整通道 target 三 seed 扩展（A10、30 epochs）
+
+| target | seed 0 | seed 1 | seed 2 | 成功率均值 ± 样本标准差 |
+| --- | ---: | ---: | ---: | ---: |
+| released-code + stored EMA | 10/20 | 5/20 | 2/20 | **28.33% ± 20.21%** |
+| detached EMA loss target | 6/20 | 9/20 | 1/20 | **26.67% ± 20.21%** |
+
+FPJ-037 没有重复 seed 0，而是在相同数据哈希、完整通道、1024 点、batch 64、30 epochs、EMA 0.999
+和 20-episode 评测协议下补齐 seeds 1/2。两种模式在各自 60 个 episode 中仅相差 1 次成功，且样本
+标准差都为 20.21 个百分点。因此完整通道结果不支持稳定排名；它也说明小通道 CPU 对照中 35 个
+百分点的差距不能直接外推到完整网络。
+
+同一 seed-1 trainer 的无重训诊断为：code 在线/code 5/20、code EMA/code 2/20、code 在线/exact
+3/20；detached 在线/code 9/20、detached EMA/code 10/20。这些诊断只分离权重选择和动作切片影响，
+不计入三 seed 统计。完整脱敏记录见 [`evidence/fpj037/manifest.json`](evidence/fpj037/manifest.json)。
+
 当前已经完成 CPU 闭环证据链、A10 CUDA 可行性验证、两个任务的完整 512/1024/2048 通道三 seed
-有限预算训练、released-code/detached target 的小通道三 seed 对照，以及完整通道单 seed 配对。
-论文 3000 epochs 配方、完整通道 target 的多 seed 统计、原版旧仿真栈逐项对齐和
-成功/失败视频也尚未完成。代码已发布到
+有限预算训练、released-code/detached target 的小通道与完整通道三 seed 对照，以及 EMA/exact
+评测诊断。论文 3000 epochs 配方和原版旧仿真栈逐项对齐尚未完成；成功/失败视频不在本次交付范围内。代码已发布到
 <https://github.com/shview/FlowPolicy-Jittor>；这不改变实验边界，仍不能写成“论文成功率已复现”。
 
 阿里云环境、持久化路径、复跑命令和证据边界见 [云端环境记录](docs/CLOUD_ALIYUN.md)。
 `reach-wall-v3` 的本地门槛见 [FPJ-033 preliminary bundle](evidence/fpj033/preliminary/manifest.json)，
 A10 三 seed 正式有限预算结果见 [FPJ-033 formal bundle](evidence/fpj033/formal/manifest.json)。正式包只发布
 配置、逻辑数据指纹、训练摘要、checkpoint 哈希和 60 个 episode 明细，不包含 Zarr 数据或 checkpoint 本体。
-完整通道 target 单 seed 配对见 [FPJ-036 bundle](evidence/fpj036/manifest.json)，同样不发布数据与权重。
+完整通道 target 单 seed 可行性见 [FPJ-036 bundle](evidence/fpj036/manifest.json)，三 seed 扩展与
+EMA/exact 诊断见 [FPJ-037 bundle](evidence/fpj037/manifest.json)；两者都不发布数据与权重。
+所有公开结论与文件的对应关系集中在 [公开证据索引](evidence/README.md)。发布前可运行：
+
+```bash
+python scripts/verify_public_evidence.py
+```
+
+该命令会重新检查 manifest 哈希，并从逐回合记录独立计算成功数、均值和样本标准差；它不会读取
+Zarr 数据或 checkpoint。
 
 公开代码在默认 `horizon=4 / n_obs_steps=2 / n_action_steps=4` 下从索引 1 开始切动作，因此实际只返回 3 步。本项目默认保留这一 `code-faithful` 行为，同时提供显式 `action_slice_mode="exact"` 对照；不会把修正后的 4 步结果混入基线。
 
@@ -193,7 +219,8 @@ detached 构造阶段 RSS 比无 EMA code 模式多 3.75 MiB；JIT warm-up 后�
 
 策略 checkpoint 不只检查键和 shape：保存前会从当前运行对象重新生成配置指纹，拒绝构造后被篡改的 NFE、loss 或动作切片设置；加载前会验证实现版本、Jittor 版本、数值 dtype 与 NaN/Inf。文件采用同目录临时文件写入后原子替换，加载提交失败则回滚模型和 normalizer，避免留下半恢复状态。
 
-详细步骤见 [复现计划](docs/REPRODUCTION_PLAN.md)，重要技术取舍见 [决策记录](docs/DECISIONS.md)，答辩准备见 [答辩指南](docs/DEFENSE_GUIDE.md)。
+详细步骤见 [复现计划](docs/REPRODUCTION_PLAN.md)，重要技术取舍见 [决策记录](docs/DECISIONS.md)，
+答辩准备见 [答辩指南](docs/DEFENSE_GUIDE.md) 和 [12 页讲解草稿](docs/DEFENSE_MATERIALS.md)。
 
 ## 上游来源
 

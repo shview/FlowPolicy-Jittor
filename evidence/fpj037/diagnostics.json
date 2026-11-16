@@ -1,0 +1,751 @@
+{
+  "claim_boundary": [
+    "These rollouts isolate weight selection or action slicing on selected seed-1 trainer checkpoints.",
+    "They are diagnostics, not additional independent training seeds and are excluded from the three-seed target aggregate."
+  ],
+  "entries": [
+    {
+      "action_slice_mode": "code",
+      "checkpoint_reload": {
+        "checkpoint_fresh_policy_reload_max_abs_delta": 3.5762786865234375e-07,
+        "checkpoint_reload_max_abs_delta": 3.5762786865234375e-07,
+        "checkpoint_repeat_max_abs_delta": 3.5762786865234375e-07,
+        "checkpoint_same_object_reload_max_abs_delta": 3.5762786865234375e-07
+      },
+      "derived_policy_sha256": "23fe32bfc1d1ad3e29a46896d046ddd6f207c67de51a5f27ba29567d06df2362",
+      "done_reasons": {
+        "step_cap": 20
+      },
+      "episode_count": 20,
+      "episode_outcomes": [
+        {
+          "done_reason": "step_cap",
+          "episode": 0,
+          "policy_latency_ms": {
+            "mean": 3.7475925671616954,
+            "p95": 3.8002643996151164
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 1,
+          "policy_latency_ms": {
+            "mean": 3.7602644626884336,
+            "p95": 3.8204316997507703
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 2,
+          "policy_latency_ms": {
+            "mean": 3.788494447649304,
+            "p95": 3.836856300767977
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 3,
+          "policy_latency_ms": {
+            "mean": 3.7645406267875474,
+            "p95": 3.8205917997402135
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 4,
+          "policy_latency_ms": {
+            "mean": 3.78828673133081,
+            "p95": 3.85690529965359
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 5,
+          "policy_latency_ms": {
+            "mean": 3.7830632687989385,
+            "p95": 3.855619000751176
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 6,
+          "policy_latency_ms": {
+            "mean": 3.7759312537619096,
+            "p95": 3.8458151999293477
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 7,
+          "policy_latency_ms": {
+            "mean": 3.7884029105098036,
+            "p95": 3.8362301005690824
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 8,
+          "policy_latency_ms": {
+            "mean": 3.775949074645438,
+            "p95": 3.8368512998204096
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 9,
+          "policy_latency_ms": {
+            "mean": 3.7830089104996905,
+            "p95": 3.8315178000630112
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 10,
+          "policy_latency_ms": {
+            "mean": 3.7943439700355346,
+            "p95": 3.8395355999455205
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 11,
+          "policy_latency_ms": {
+            "mean": 3.7765665222908487,
+            "p95": 3.8366140997823095
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 12,
+          "policy_latency_ms": {
+            "mean": 3.769767955160585,
+            "p95": 3.809970999463985
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 13,
+          "policy_latency_ms": {
+            "mean": 3.797955358203947,
+            "p95": 3.8543590995686827
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 14,
+          "policy_latency_ms": {
+            "mean": 3.779979581999377,
+            "p95": 3.8446376001957105
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 15,
+          "policy_latency_ms": {
+            "mean": 3.765521656722699,
+            "p95": 3.822535300241725
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 16,
+          "policy_latency_ms": {
+            "mean": 3.772079194155296,
+            "p95": 3.8234372997976607
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 17
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 17,
+          "policy_latency_ms": {
+            "mean": 3.8193347461774874,
+            "p95": 3.8551651003217557
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 18,
+          "policy_latency_ms": {
+            "mean": 3.7774998059260847,
+            "p95": 3.82907799903478
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 19,
+          "policy_latency_ms": {
+            "mean": 3.7835619702369216,
+            "p95": 3.833807800947397
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 78
+        }
+      ],
+      "label": "code-seed1-ema-code",
+      "latency_ms_mean": 3.7796072507371177,
+      "noise_seed": 1,
+      "seed": 1,
+      "source_trainer_sha256": "760c57bf80f5cb56e79d29634e5c7a86a13a94bba4a6bf2c710475e0d57f7ccd",
+      "success_episodes": 2,
+      "success_rate": 0.1,
+      "target_mode": "code",
+      "task": "reach-wall-v3",
+      "total_steps": 4000,
+      "weights": "ema"
+    },
+    {
+      "action_slice_mode": "exact",
+      "checkpoint_reload": {
+        "checkpoint_fresh_policy_reload_max_abs_delta": 3.5762786865234375e-07,
+        "checkpoint_reload_max_abs_delta": 3.844499588012695e-06,
+        "checkpoint_repeat_max_abs_delta": 3.844499588012695e-06,
+        "checkpoint_same_object_reload_max_abs_delta": 3.844499588012695e-06
+      },
+      "derived_policy_sha256": "9c3dc88f754872eecb338f8a99c16c3590e008ab3e257ebe73144ffa17979fa9",
+      "done_reasons": {
+        "step_cap": 20
+      },
+      "episode_count": 20,
+      "episode_outcomes": [
+        {
+          "done_reason": "step_cap",
+          "episode": 0,
+          "policy_latency_ms": {
+            "mean": 3.7607825801023864,
+            "p95": 3.8255135503277415
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 1,
+          "policy_latency_ms": {
+            "mean": 3.7725658799899975,
+            "p95": 3.828212099688244
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 14
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 2,
+          "policy_latency_ms": {
+            "mean": 3.7693280200255685,
+            "p95": 3.8117399997645407
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 3,
+          "policy_latency_ms": {
+            "mean": 3.7779987000249093,
+            "p95": 3.839859299478121
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 4,
+          "policy_latency_ms": {
+            "mean": 3.7847578400032944,
+            "p95": 3.8307632490614196
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 5,
+          "policy_latency_ms": {
+            "mean": 3.780134900152916,
+            "p95": 3.82764775031319
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 6,
+          "policy_latency_ms": {
+            "mean": 3.7974898599350126,
+            "p95": 3.8465583989818697
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 7,
+          "policy_latency_ms": {
+            "mean": 3.79136436022236,
+            "p95": 3.85562579949692
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 8,
+          "policy_latency_ms": {
+            "mean": 3.7821619800524786,
+            "p95": 3.829663450414955
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 23
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 9,
+          "policy_latency_ms": {
+            "mean": 3.793455819868541,
+            "p95": 3.8161852001394436
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 10,
+          "policy_latency_ms": {
+            "mean": 3.7583243597691762,
+            "p95": 3.823335148899787
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 11,
+          "policy_latency_ms": {
+            "mean": 3.7973959998998907,
+            "p95": 3.8422612993599614
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 12,
+          "policy_latency_ms": {
+            "mean": 3.7642060001235222,
+            "p95": 3.814728700763226
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 13,
+          "policy_latency_ms": {
+            "mean": 3.7749029799670097,
+            "p95": 3.8153691503794107
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 14,
+          "policy_latency_ms": {
+            "mean": 3.7667647599664633,
+            "p95": 3.8200377991415735
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 14
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 15,
+          "policy_latency_ms": {
+            "mean": 3.7782763600625913,
+            "p95": 3.8212572004340473
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 16,
+          "policy_latency_ms": {
+            "mean": 3.77463978020387,
+            "p95": 3.8069004001954454
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 17,
+          "policy_latency_ms": {
+            "mean": 3.757218239879876,
+            "p95": 3.8070002502536227
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 18,
+          "policy_latency_ms": {
+            "mean": 3.7682243601739174,
+            "p95": 3.8330861005306356
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 19,
+          "policy_latency_ms": {
+            "mean": 3.760701400206017,
+            "p95": 3.8276765996670292
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        }
+      ],
+      "label": "code-seed1-online-exact",
+      "latency_ms_mean": 3.77553470903149,
+      "noise_seed": 1,
+      "seed": 1,
+      "source_trainer_sha256": "760c57bf80f5cb56e79d29634e5c7a86a13a94bba4a6bf2c710475e0d57f7ccd",
+      "success_episodes": 3,
+      "success_rate": 0.15,
+      "target_mode": "code",
+      "task": "reach-wall-v3",
+      "total_steps": 4000,
+      "weights": "online"
+    },
+    {
+      "action_slice_mode": "code",
+      "checkpoint_reload": {
+        "checkpoint_fresh_policy_reload_max_abs_delta": 1.049041748046875e-05,
+        "checkpoint_reload_max_abs_delta": 1.990795135498047e-05,
+        "checkpoint_repeat_max_abs_delta": 1.3187527656555176e-05,
+        "checkpoint_same_object_reload_max_abs_delta": 1.990795135498047e-05
+      },
+      "derived_policy_sha256": "79bba21694c5c538d5982d776575964ce7a0dfad31b651218ef2da70c59712a5",
+      "done_reasons": {
+        "step_cap": 20
+      },
+      "episode_count": 20,
+      "episode_outcomes": [
+        {
+          "done_reason": "step_cap",
+          "episode": 0,
+          "policy_latency_ms": {
+            "mean": 3.798429283513053,
+            "p95": 3.793860699988727
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 47
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 1,
+          "policy_latency_ms": {
+            "mean": 3.730857805979878,
+            "p95": 3.7839117996554705
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 2,
+          "policy_latency_ms": {
+            "mean": 3.752098641802041,
+            "p95": 3.810049800267734
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 49
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 3,
+          "policy_latency_ms": {
+            "mean": 3.7510751791879597,
+            "p95": 3.801859199666069
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 70
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 4,
+          "policy_latency_ms": {
+            "mean": 3.7615204328447827,
+            "p95": 3.823465999448672
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 56
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 5,
+          "policy_latency_ms": {
+            "mean": 3.7672018805015295,
+            "p95": 3.8115632994959014
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 6,
+          "policy_latency_ms": {
+            "mean": 3.7420870299520987,
+            "p95": 3.7836090004930156
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 7,
+          "policy_latency_ms": {
+            "mean": 3.7785476416407184,
+            "p95": 3.7992705993019626
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 8,
+          "policy_latency_ms": {
+            "mean": 3.7604617314105213,
+            "p95": 3.81369819988322
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 18
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 9,
+          "policy_latency_ms": {
+            "mean": 3.75291429858706,
+            "p95": 3.8200882001547143
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 10,
+          "policy_latency_ms": {
+            "mean": 3.7784935075115524,
+            "p95": 3.828376300589298
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 11,
+          "policy_latency_ms": {
+            "mean": 3.7566034775477077,
+            "p95": 3.81686320015433
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 12,
+          "policy_latency_ms": {
+            "mean": 3.7561933730564725,
+            "p95": 3.795232600532472
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 25
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 13,
+          "policy_latency_ms": {
+            "mean": 3.7663404924767665,
+            "p95": 3.8158263994773733
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 55
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 14,
+          "policy_latency_ms": {
+            "mean": 3.757816626765911,
+            "p95": 3.797232600481948
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 68
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 15,
+          "policy_latency_ms": {
+            "mean": 3.741708507406466,
+            "p95": 3.812457800086122
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 16,
+          "policy_latency_ms": {
+            "mean": 3.7412921940528183,
+            "p95": 3.8027467997380877
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 13
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 17,
+          "policy_latency_ms": {
+            "mean": 3.7523238657035,
+            "p95": 3.810005900413671
+          },
+          "steps": 200,
+          "success": true,
+          "success_steps": 1
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 18,
+          "policy_latency_ms": {
+            "mean": 3.7496017613098522,
+            "p95": 3.8069629003075534
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        },
+        {
+          "done_reason": "step_cap",
+          "episode": 19,
+          "policy_latency_ms": {
+            "mean": 3.761594686517101,
+            "p95": 3.8215728993236553
+          },
+          "steps": 200,
+          "success": false,
+          "success_steps": 0
+        }
+      ],
+      "label": "detached-seed1-ema-code",
+      "latency_ms_mean": 3.7578581208883897,
+      "noise_seed": 1,
+      "seed": 1,
+      "source_trainer_sha256": "d697061c0223394f64615c90ab91524711638fec13961cc94cd13e9d46cb8999",
+      "success_episodes": 10,
+      "success_rate": 0.5,
+      "target_mode": "detached",
+      "task": "reach-wall-v3",
+      "total_steps": 4000,
+      "weights": "ema"
+    }
+  ],
+  "evidence_status": "evaluation-only checkpoint diagnostics; no retraining",
+  "schema_version": 1
+}

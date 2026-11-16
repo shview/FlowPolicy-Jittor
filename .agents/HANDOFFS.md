@@ -3635,3 +3635,503 @@
 - FPJ-036 remains `gate / done`; no next task is activated without a new user-approved objective.
 
 
+## FPJ037-ACTIVATE-01
+
+- User approved continuing from the one-seed feasibility result to the course-ready completion
+  path. FPJ-037 is activated to add the four missing full-channel cells for seeds 1/2 and produce
+  a true two-mode, three-seed comparison; FPJ-038 is queued for rollout videos and defence material.
+- Estimated FPJ-037 cloud wall time is 3-5 hours plus 2-3 hours for evidence/review/publication;
+  estimated A10 trial use is 21-35 calculation hours. The 37-task/3000-epoch paper recipe remains
+  outside the course reproduction target.
+- The previous ENOSPC incident is now an explicit acceptance risk: each cell must hash and prune
+  closed trainer checkpoints before later cells consume the 100 GiB disk. Seed 0 is retained and
+  must not be rerun or silently replaced.
+- State moves to `FPJ-037 implementation / ready`; no cloud start occurred in this activation step.
+
+
+## FPJ037-REPLAN-01
+
+- The user changed the order before implementation began: first finish evidence consolidation,
+  verification, documentation/publication and then video/defence material; any field requiring
+  future cloud seeds 1/2 must remain blank.
+- FPJ-037 is therefore replanned as a local-only evidence/documentation task. FPJ-038 covers local
+  video and defence material, while the A10 three-seed extension moves to optional FPJ-039 and is
+  not authorized to start now.
+- No cloud tab was opened, no instance was started and no experiment output was changed. The time
+  estimate is 2-3 hours for FPJ-037 and 2-3 hours for FPJ-038.
+
+
+## FPJ037-REPLAN-02
+
+- The user explicitly changed FPJ-037 again and authorized cloud training to run in parallel with
+  evidence/document/defence preparation. The optional FPJ-039 seeds-1/2 extension is therefore
+  absorbed into FPJ-037 and must not be launched a second time.
+- The existing Alibaba PAI-DSW A10 instance was started at approximately 2026-11-16 10:42 +08:00.
+  FPJ-036 seed 0 and every published evidence bundle remain immutable; only matched seeds 1/2 for
+  code and detached target modes are authorized.
+- The cloud-dependent table fields remain blank until all four new cells finish and independent
+  validation recomputes the three-seed aggregates. Every closed cell must be hashed before large
+  trainer checkpoints are pruned, and the instance must be stopped after evidence capture.
+- Local implementation continues under the existing serial role state. Cloud execution may run in
+  the background, but verification, anti-pattern, quality and gate roles remain serial.
+
+
+## FPJ037-IMPL-01
+
+- Task: FPJ-037, three-seed target extension plus evidence consolidation and publication
+- Role completed: implementation
+- Result: passed
+- Owner: `/root`
+- Files changed:
+  - `.gitattributes`, `README.md`
+  - `docs/CLOUD_ALIYUN.md`, `docs/DECISIONS.md`, `docs/DEFENSE_GUIDE.md`,
+    `docs/DEFENSE_MATERIALS.md`, `docs/REPRODUCTION_PLAN.md`
+  - `evidence/README.md`, `evidence/fpj037/**`
+  - `scripts/rollout.py`, `scripts/build_target_extension_evidence.py`,
+    `scripts/derive_policy_checkpoint.py`, `scripts/verify_public_evidence.py`
+  - `tests/test_derive_policy_checkpoint.py`, `tests/test_public_evidence.py`,
+    `tests/test_target_extension_evidence.py`
+  - `.agents/STATE.yaml`, `.agents/QUEUE.md`, `.agents/HANDOFFS.md`
+- Commands run:
+  - `python scripts\verify_public_evidence.py --json`
+  - `git diff --check`
+  - `git diff --exit-code -- evidence/fpj033 evidence/fpj034 evidence/fpj035 evidence/fpj036`
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q`
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python scripts/validate_agent_state.py`
+- Exact outputs:
+  - A10 seeds 1/2: code `5/20`, `2/20`; detached `9/20`, `1/20`. Combined with immutable
+    seed 0, code is `28.33% ± 20.21%` and detached is `26.67% ± 20.21%`.
+  - Independent cloud export validation covered 80 new main episodes, 60 diagnostic episodes and
+    8 checkpoint/policy files. Downloaded raw export SHA256:
+    `b94f114424e87cbf180344bfbf87891e3fc9045caba8f311f31e56a8cf14846a`.
+  - Public verifier: exit 0; 5 manifests; FPJ-037 6 cells / 120 main episodes; diagnostics
+    3 entries / 60 episodes; safety scan 35 files / 276085 bytes.
+  - Existing `evidence/fpj033` through `evidence/fpj036`: `git diff --exit-code` returned 0.
+  - Final full suite: exit 0, `266 passed, 1 skipped, 48 warnings in 224.20s`.
+  - Skip: `tests/test_conv1d_parity.py` because PyTorch is absent from the core Jittor environment;
+    it is not counted as passed.
+  - Cloud cleanup deleted exactly 8 verified checkpoint files totaling `20,432,488,795` bytes;
+    no `.ckpt` remained under FPJ-037. PAI-DSW was confirmed `已停止` at
+    2026-11-16 15:50 +08:00.
+  - State validator before handoff: exit 0,
+    `Agent state OK: task=FPJ-037 stage=implementation status=in_progress`.
+- Acceptance status:
+  - [x] Preserved FPJ-036 seed 0 and all published evidence directories while adding matched A10
+    seeds 1/2 only.
+  - [x] Matched architecture, data hash, budget and rollout protocol; independently hashed outputs,
+    removed large checkpoint bytes and stopped the instance.
+  - [x] Added LF rules for public JSON/Markdown evidence.
+  - [x] Added a local manifest/hash/episode aggregate verifier through FPJ-037.
+  - [x] Added a claim-to-file evidence index and kept CPU/A10 and small/full-channel claims separate.
+  - [x] Updated technical and defence documents from independently recomputed results.
+  - [x] Scanned the publication candidate for private paths, identifiers, credentials and model/data
+    bytes; historical evidence directories remain unchanged.
+  - [x] Ran the single final full local suite; serial verification, anti-pattern, quality and gate
+    reviews remain to be completed by their roles.
+- Findings:
+  - P1: none.
+  - P2: none newly introduced by implementation.
+  - P3: WSL session transport hung before the final suite; after explicit user authorization,
+    `wsl --shutdown` restored it. The subsequent full suite passed.
+- Remaining risks:
+  - Three seeds and 20 episodes per seed have high variance and do not support a significance claim.
+  - The experiment still uses 30 epochs and a modern substitute simulator stack rather than the
+    paper's 3000-epoch, 37-task legacy stack.
+  - Success/failure video assembly is queued separately as FPJ-038.
+- Prohibited claims:
+  - Paper success rate or full paper recipe reproduced.
+  - Statistically significant or universal superiority of either target semantic.
+  - Diagnostic rollouts counted as independent training seeds.
+  - Bit-exact save/resume for every process history.
+- Recommended next role: verification
+- Next agent should read:
+  - `AGENTS.md`
+  - `.agents/STATE.yaml`
+  - `evidence/README.md`
+  - `scripts/verify_public_evidence.py`
+  - `evidence/fpj037/manifest.json`
+
+
+## FPJ037-VERIFY-01
+
+- Task: FPJ-037, verification, attempt 1
+- Role completed: verification
+- Result: passed
+- Owner: `/root/fpj037_verification`
+- Files changed:
+  - `.agents/HANDOFFS.md` and `.agents/STATE.yaml` only; product code and evidence remained read-only.
+- Commands run:
+  - `python scripts\verify_public_evidence.py --json`
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q tests/test_target_extension_evidence.py tests/test_derive_policy_checkpoint.py tests/test_public_evidence.py`
+  - `git diff --check`
+  - `git diff --exit-code -- evidence/fpj033 evidence/fpj034 evidence/fpj035 evidence/fpj036`
+  - `git check-attr eol text -- evidence/fpj037/SUMMARY.md evidence/fpj037/comparison.json evidence/fpj037/diagnostics.json evidence/fpj037/cloud_metadata.json`
+  - independent standard-library Python recomputation of FPJ-037 manifests, grid, 180 episodes,
+    aggregates, raw-export source hashes and publication-candidate safety
+  - temporary-directory real-Jittor CLI probe for `scripts/derive_policy_checkpoint.py`
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python scripts/validate_agent_state.py`
+- Exact outputs:
+  - Public verifier: exit 0; 5 manifests; FPJ-037 6 cells / 120 main episodes; diagnostics
+    3 entries / 60 episodes; safety scan 35 files / 276085 bytes.
+  - Focused tests: exit 0, `17 passed in 1.93s`; no skipped tests.
+  - The implementation full suite was not rerun under the user's single-check rule. Reused exact
+    result: exit 0, `266 passed, 1 skipped, 48 warnings in 224.20s`. The one skip remains
+    `tests/test_conv1d_parity.py` because PyTorch is absent from the core Jittor environment and is
+    not counted as passed.
+  - Independent episode recomputation: code rates `[0.5, 0.25, 0.1]`, mean
+    `0.2833333333333333`, sample std `0.20207259421636903`, 17/60 successes; detached rates
+    `[0.3, 0.45, 0.05]`, mean `0.26666666666666666`, the same sample std, 16/60 successes.
+  - Diagnostics independently contained 60 episodes / 15 successes and exactly the three declared
+    seed-1 online/EMA and code/exact variants; they remain excluded from training-seed aggregates.
+  - Raw export SHA256 independently matched
+    `b94f114424e87cbf180344bfbf87891e3fc9045caba8f311f31e56a8cf14846a`; 7 source file hashes,
+    8 checkpoint hash records, 80 extension episodes and 60 diagnostic episodes matched the public
+    manifest/verification record.
+  - Candidate scan covered 23 changed/untracked publishable files; no checkpoint/data archive,
+    private identifier/path or real credential was found. A first context-free scan returned exit 1
+    on the already documented synthetic GitHub-token-shaped fixture in `.agents/HANDOFFS.md:2652`;
+    contextual review confirmed the adjacent record names `tests/test_evidence_bundle.py:51`, and a
+    second scan allowing only that historical fixture returned exit 0 with zero real hits.
+  - `.gitattributes` reports `eol: lf` and `text: set` for all four FPJ-037 payload files.
+  - Real Jittor derivative probe: first CLI exit 0, implicit-overwrite retry exit 2; source trainer
+    SHA unchanged, EMA model weight replaced, normalizer preserved, exact slice set and report hash
+    matched the derived policy.
+  - `git diff --check` and immutable FPJ-033 through FPJ-036 evidence diff both returned 0.
+  - State validator before handoff: exit 0,
+    `Agent state OK: task=FPJ-037 stage=verification status=in_progress`.
+- Acceptance status:
+  - [x] Independently verified that only seeds 1/2 extend the immutable FPJ-036 seed 0 and that the
+    completed grid is code/detached × seeds 0/1/2.
+  - [x] Independently verified shared full-channel CUDA contract, 20-episode cells, checkpoint/source
+    hashes, cloud cleanup record and stopped-instance documentation.
+  - [x] Verified LF attributes and raw manifest bytes.
+  - [x] Recomputed public manifest, episode and aggregate results without trusting summary tables.
+  - [x] Verified the claim-to-file index and the separation of diagnostics from independent seeds.
+  - [x] Checked README/technical/defence claims against the independently recomputed values.
+  - [x] Checked publication-candidate artifact and privacy boundaries; prior evidence directories
+    are byte-unchanged in Git.
+  - [x] Accepted the implementation's single final suite result; remaining serial roles and gate
+    still precede publication.
+- Findings:
+  - P1: none.
+  - P2: `build_target_extension_evidence.py` can leave a partial new output directory if a late
+    write/subprocess step fails after directory creation. This is inherited evidence-bundle
+    atomicity debt, does not affect the already complete/hash-verified FPJ-037 bundle, and is not an
+    acceptance blocker for this task.
+  - P3: a context-free credential regex flags the intentionally synthetic historical fixture in
+    `.agents/HANDOFFS.md:2652`; contextual scanning is required to distinguish it from a real token.
+- Remaining risks:
+  - Three seeds with 20 episodes each remain a high-variance selected-task result, not a significance
+    test or the paper's full recipe.
+  - Raw checkpoint bytes were intentionally removed after hash verification and can only be restored
+    by rerunning training; public reproducibility relies on recorded hashes and episode evidence.
+- Prohibited claims:
+  - Paper success rate or 3000-epoch/37-task recipe reproduced.
+  - Statistically significant or universal superiority of either target semantic.
+  - Diagnostic rollouts counted as independent training seeds.
+  - Skipped test counted as passed or policy checkpoint equated with trainer checkpoint.
+- Recommended next role: anti_pattern
+- Next agent should read:
+  - `AGENTS.md`
+  - `.agents/STATE.yaml`
+  - `FPJ037-IMPL-01` and `FPJ037-VERIFY-01`
+  - `scripts/build_target_extension_evidence.py`
+  - `scripts/verify_public_evidence.py`
+  - `evidence/fpj037/manifest.json`
+
+
+## FPJ037-AP-01
+
+- Task: FPJ-037, anti-pattern review, attempt 1
+- Role completed: anti_pattern
+- Result: passed
+- Owner: `/root/fpj037_anti_pattern`
+- Files changed:
+  - `.agents/HANDOFFS.md` and `.agents/STATE.yaml` only; product code and evidence remained read-only.
+- Commands run:
+  - `git diff --exit-code -- evidence/fpj033 evidence/fpj034 evidence/fpj035 evidence/fpj036`
+  - `python scripts\verify_public_evidence.py --json`
+  - `git check-attr text eol -- evidence/README.md evidence/fpj037/SUMMARY.md evidence/fpj037/manifest.json evidence/fpj037/cloud_metadata.json evidence/fpj037/comparison.json evidence/fpj037/diagnostics.json`
+  - `git diff --numstat -- .agents/HANDOFFS.md`
+  - `git diff --check`
+  - read-only PowerShell publication-candidate scan over changed and untracked files for forbidden
+    model/archive suffixes, Windows user paths, DSW/workspace/account identifiers and common
+    GitHub/OpenAI/AWS credential formats; the documented historical synthetic token fixture was
+    the only explicit allow-list entry.
+  - read-only byte scan of every `evidence/fpj037` file for CRLF and final LF.
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python scripts/validate_agent_state.py`
+- Exact outputs:
+  - Immutable FPJ-033 through FPJ-036 evidence diff: exit 0.
+  - Public verifier: exit 0; 5 manifests; FPJ-037 6 cells / 120 main episodes and 3 diagnostic
+    entries / 60 episodes; 35 evidence files / 276085 bytes scanned.
+  - Publication candidate: 23 files / 533898 bytes; zero unexpected forbidden-suffix, private-path,
+    account/instance-ID or credential hits.
+  - FPJ-037 public directory contains exactly five small JSON/Markdown files; no checkpoint, Zarr,
+    archive or raw log. All five have no CRLF and end with LF.
+  - Git attributes report `text: set`, `eol: lf` for the root evidence index, FPJ-037 manifest and
+    all four declared payloads.
+  - Handoff history diff is append-only: `205` added lines and `0` deleted lines before this record.
+  - Claim review confirmed the main comparison is 17/60 versus 16/60 and every user-facing result
+    says the finite-budget data do not support a stable/statistically significant ranking.
+  - Diagnostics contain exactly 3 seed-1 entries / 60 episodes and explicitly say they are excluded
+    from the three-independent-seed aggregate.
+  - No full pytest was rerun; this role reuses implementation's single exact result
+    `266 passed, 1 skipped, 48 warnings in 224.20s`, with the PyTorch-absent skip not counted passed.
+  - State validator on claim: exit 0,
+    `Agent state OK: task=FPJ-037 stage=anti_pattern status=in_progress`.
+- Acceptance status:
+  - [x] Existing FPJ-033 through FPJ-036 evidence remains byte-unchanged in Git.
+  - [x] No data/checkpoint/archive/raw-log bytes or private cloud/account identifiers are in the
+    FPJ-037 public bundle or publication candidate.
+  - [x] Diagnostic rollouts remain separate from independent training seeds in code, evidence,
+    README and defence material.
+  - [x] CPU/A10, small/full-channel, 30/3000-epoch and modern/legacy simulator boundaries are
+    consistently stated; no result is presented as paper-level or universally superior.
+  - [x] New evidence uses LF and manifest hashes verify; published historical evidence is untouched.
+  - [x] Coordination history remains append-only.
+- Findings:
+  - P1: none.
+  - P2: `scripts/build_target_extension_evidence.py:473-512` creates and writes the final output
+    directory before the last metadata safety check, Git lookup and manifest write. A late failure
+    can leave a partial new directory that a retry refuses to overwrite. This is the inherited
+    evidence-bundle atomicity debt identified by verification; it does not affect the complete,
+    hash-verified FPJ-037 bundle and is not an acceptance blocker here.
+  - P3: `scripts/verify_public_evidence.py:370-395` deliberately scans only `evidence/`. The broader
+    23-file publication-candidate privacy scan therefore remains a release procedure rather than a
+    persistent repository check. The current candidate passed that independent scan.
+  - P3: a naive whole-repository credential scan flags the intentionally synthetic historical
+    fixture at `.agents/HANDOFFS.md:2652`; contextual scanning must keep distinguishing this fixture
+    from a real token.
+- Remaining risks:
+  - Three seeds × 20 episodes is high-variance selected-task evidence, not a statistical test.
+  - Removed checkpoint bytes are recoverable only by rerunning training; public evidence preserves
+    hashes and episode records, not weights.
+  - Future bundle generation should use a temporary sibling directory plus atomic rename if the
+    inherited atomicity debt is scheduled.
+- Prohibited claims:
+  - Paper success rate or 3000-epoch/37-task recipe reproduced.
+  - Statistically significant or universal superiority of code or detached target semantics.
+  - Diagnostic rollouts counted as independent training seeds.
+  - Public policy checkpoint equated with a complete trainer checkpoint.
+- Recommended next role: quality
+- Next agent should read:
+  - `AGENTS.md`
+  - `.agents/STATE.yaml`
+  - `FPJ037-IMPL-01`, `FPJ037-VERIFY-01` and `FPJ037-AP-01`
+  - `scripts/build_target_extension_evidence.py:454-513`
+  - `scripts/verify_public_evidence.py:370-420`
+  - `evidence/README.md`
+
+
+## FPJ037-QUALITY-01
+
+- Task: FPJ-037, quality review, attempt 1
+- Role completed: quality
+- Result: needs_fix
+- Owner: `/root/fpj037_quality`
+- Files changed:
+  - `.agents/HANDOFFS.md` and `.agents/STATE.yaml` only; product code and evidence remained read-only.
+- Commands run:
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python scripts/validate_agent_state.py`
+  - temporary-directory standard-library Python adversarial probe for missing FPJ-037 manifest,
+    incomplete target grid and malformed diagnostics with self-consistent updated manifest hashes
+  - in-memory builder/derivation probe for missing matched pairs, string success values and
+    wrong-shape EMA parameters
+  - temporary evidence-tree probe containing an unknown binary `weights.bin`
+  - `git diff --check`
+- Exact outputs:
+  - Missing `evidence/fpj037/manifest.json` was accepted:
+    `MISSING_MANIFEST_ACCEPTED PASS 4 6`.
+  - After removing every detached FPJ-037 cell and updating the manifest hash, the verifier still
+    accepted the incomplete grid: `MISSING_DETACHED_ACCEPTED PASS 3 ['code']`.
+  - After reducing diagnostics to one entry and changing it to `seed=99`,
+    `target_mode='invented'` and an unrelated all-zero source trainer hash, the verifier still
+    accepted it: `MALFORMED_DIAGNOSTICS_ACCEPTED PASS 1 99 invented`.
+  - The bundle builder accepted an extension with no seed-1/2 matched-validation pairs and still
+    emitted `passed=true`; the combined pair list contained only the base seed-0 pair.
+  - The builder accepted JSON string `"false"` as a successful episode and produced a cell with
+    20 successes; the stored value remained type `str`.
+  - `derive_payload()` accepted a three-element EMA replacement for a two-element online weight:
+    `EMA_SHAPE_MISMATCH_ACCEPTED (3,)`.
+  - `scan_public_tree()` accepted `evidence/weights.bin` and reported one checked file / 15 bytes.
+  - State validator on claim: exit 0,
+    `Agent state OK: task=FPJ-037 stage=quality status=in_progress`; `git diff --check` exit 0.
+  - No full pytest was rerun. This role reuses the implementation result
+    `266 passed, 1 skipped, 48 warnings in 224.20s`; the PyTorch-absent skip remains separate.
+- Acceptance status:
+  - [x] The current FPJ-037 bundle itself is complete, manifest-hash verified and independently
+    recomputed; no current result number was disproved.
+  - [ ] The persistent local verifier does not yet guarantee FPJ-037 manifest presence, the exact
+    code/detached × seeds 0/1/2 grid, or the declared diagnostic provenance. This violates the
+    acceptance item requiring manifest/hash and aggregate verification through FPJ-037.
+  - [x] Existing FPJ-033 through FPJ-036 evidence remains unchanged; cloud cleanup and stop records
+    are unaffected.
+- Findings:
+  - P1: `scripts/verify_public_evidence.py:30,398-413` makes the FPJ-037 manifest optional even when
+    FPJ-037 payloads exist. A missing integrity root therefore returns PASS.
+  - P1: `scripts/verify_public_evidence.py:276-300` aggregates whatever modes/cells are present but
+    does not require exactly `code` and `detached`, seeds `[0,1,2]`, six successful cells or a
+    complete paired grid. A code-only three-cell report with a matching rewritten manifest passed.
+  - P1: `scripts/verify_public_evidence.py:331-367` does not enforce the three expected diagnostic
+    variants, task/seed/target mode, SHA256 fields, finite reload values or linkage from each
+    diagnostic source trainer hash to the corresponding seed-1 main cell. A fabricated one-entry
+    diagnostic record passed after its manifest hash was updated.
+  - P2: `scripts/build_target_extension_evidence.py:102-130,375-380` coerces episode success with
+    `bool()` and copies matched-validation pairs without proving one passed pair per task/seed.
+    Malformed success strings and missing extension pairs are accepted.
+  - P2: `scripts/derive_policy_checkpoint.py:73-91` verifies EMA names/keys but not replacement
+    tensor shapes, dtypes or finite values; a corrupt trainer can yield a structurally invalid
+    derived policy.
+  - P2: `scripts/verify_public_evidence.py:31-40,370-395` rejects a short suffix list but silently
+    permits unknown binary artifacts. Since the repository's public evidence is intentionally
+    JSON/Markdown-only, unexpected non-JSON/Markdown files should be rejected rather than counted.
+  - P2 (confirmed inherited): `scripts/build_target_extension_evidence.py:473-512` writes directly
+    to the final directory before late metadata/Git/manifest operations and can leave a partial
+    directory after failure.
+  - P3: `scripts/derive_policy_checkpoint.py:188-203` commits the derived checkpoint before the
+    optional report sidecar; an unexpected sidecar I/O failure can leave a checkpoint without its
+    requested report, although normal existing-path conflicts are prechecked.
+- Required fixes before repeating verification:
+  1. Require the FPJ-037 manifest whenever its bundle is expected and add a missing-manifest
+     regression test.
+  2. Make FPJ-037 verification assert the exact six-cell two-mode/three-seed successful grid and
+     its paired-validation coverage.
+  3. Validate the exact diagnostic variant contract and link diagnostic source trainer hashes to
+     the corresponding main comparison cells; reject invented modes/seeds/hashes.
+  4. Reject non-boolean episode success values, missing matched pairs, wrong-shape/dtype/non-finite
+     EMA replacements and unexpected binary evidence; add focused adversarial tests.
+  5. Either make bundle output transactional via a temporary sibling plus atomic rename or record
+     a narrowly justified deferral while ensuring failed output cannot be mistaken for a bundle.
+- Remaining risks:
+  - Three seeds × 20 episodes remains high-variance selected-task evidence, not a significance test.
+  - Removed checkpoint bytes can only be recovered by rerunning training.
+- Prohibited claims:
+  - The public verifier is robust to missing/incomplete FPJ-037 evidence until the P1 cases above
+    are fixed and independently rechecked.
+  - Paper success rate, full 3000-epoch/37-task reproduction or universal target superiority.
+  - Diagnostic rollouts counted as independent training seeds.
+- Recommended next role: implementation (attempt 2)
+- Next agent should read:
+  - `FPJ037-QUALITY-01`
+  - `scripts/verify_public_evidence.py:24-49,276-300,331-413`
+  - `scripts/build_target_extension_evidence.py:102-130,375-512`
+  - `scripts/derive_policy_checkpoint.py:48-108`
+
+
+## FPJ037-IMPL-02
+
+- Task: FPJ-037 quality findings remediation, attempt 2
+- Role completed: implementation
+- Result: passed
+- Owner: `/root`
+- Files changed:
+  - `scripts/verify_public_evidence.py`
+  - `scripts/build_target_extension_evidence.py`
+  - `scripts/derive_policy_checkpoint.py`
+  - `tests/test_public_evidence.py`
+  - `tests/test_target_extension_evidence.py`
+  - `tests/test_derive_policy_checkpoint.py`
+  - `.agents/STATE.yaml`, `.agents/HANDOFFS.md`
+- Commands run:
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q tests/test_public_evidence.py tests/test_target_extension_evidence.py tests/test_derive_policy_checkpoint.py`
+  - `python scripts\verify_public_evidence.py --json`
+  - `git diff --exit-code -- evidence/fpj033 evidence/fpj034 evidence/fpj035 evidence/fpj036`
+  - `git diff --check`
+  - `wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python scripts/validate_agent_state.py`
+- Exact outputs:
+  - Final focused run: exit 0, `29 passed in 2.58s`, no skipped tests.
+  - Public verifier: exit 0; all 5 manifests, FPJ-037 6 cells / 120 main episodes and
+    3 diagnostics / 60 episodes passed the strengthened contracts.
+  - Historical evidence diff: exit 0 for FPJ-033 through FPJ-036.
+  - `git diff --check`: exit 0.
+  - State validator before handoff: exit 0,
+    `Agent state OK: task=FPJ-037 stage=implementation status=in_progress`.
+  - The full suite was not repeated under the user's single-check rule; the implementation retains
+    the earlier exact exit-0 result `266 passed, 1 skipped, 48 warnings in 224.20s`. The one skip is
+    still the PyTorch-absent `tests/test_conv1d_parity.py` and is not counted as passed.
+- Acceptance status:
+  - [x] FPJ-037 manifest is mandatory; its absence is a hard failure.
+  - [x] Target comparisons require the exact code/detached grid, expected seeds, 20 boolean-valued
+    episodes per cell and one passed matched-validation pair per seed.
+  - [x] Diagnostics require the exact three named variants and link their source trainer hashes to
+    the matching seed-1 main cells; task, seed, mode, SHA and reload values are validated.
+  - [x] Unknown evidence file types such as `weights.bin` are rejected.
+  - [x] Builder rejects non-boolean success and incomplete matched pairs, and stages the complete
+    bundle in a temporary sibling before one atomic directory rename.
+  - [x] EMA-derived replacements must match online parameter shape/dtype and contain finite values.
+  - [x] Current FPJ-037 evidence still passes and all earlier evidence directories remain unchanged.
+- Findings:
+  - P1: all three `FPJ037-QUALITY-01` verifier completeness findings fixed and regression-tested.
+  - P2: builder pair/type validation, derived-state validation, unknown binary scanning and output
+    transactionality fixed and regression-tested.
+  - P3: the optional derive report sidecar is still a separate atomic file from the derived
+    checkpoint; an exceptional sidecar I/O failure can leave the already-valid derived checkpoint.
+- Remaining risks:
+  - Full-repository publication scanning remains a release-step check; the persistent verifier is
+    intentionally scoped to `evidence/`.
+  - Three seeds × 20 episodes remains limited high-variance evidence.
+- Prohibited claims:
+  - Paper success rate or full 3000-epoch/37-task reproduction.
+  - Statistical significance or universal target superiority.
+  - Diagnostics as independent training seeds.
+- Recommended next role: verification
+- Next agent should read:
+  - `FPJ037-QUALITY-01`
+  - `scripts/verify_public_evidence.py`
+  - `scripts/build_target_extension_evidence.py`
+  - `scripts/derive_policy_checkpoint.py`
+  - `tests/test_public_evidence.py`
+
+
+## FPJ037-VERIFY2-STOP-01
+
+- Task: FPJ-037 root recovery after user-directed repeated-review stop
+- Role completed: recovery / coordination only
+- Result: paused review cycle; implementation remains complete
+- Previous owner: `/root/fpj037_verification2`
+- Reason: the user explicitly requested that verification/correction roles run only once rather
+  than repeating the entire verification -> anti-pattern -> quality chain after focused fixes.
+- Product files changed by the interrupted verification role: none.
+- Preserved evidence:
+  - one full suite already completed: `266 passed, 1 skipped, 48 warnings in 224.20s`;
+  - first independent verification completed (`FPJ037-VERIFY-01`);
+  - first anti-pattern review completed (`FPJ037-AP-01`);
+  - first quality review found concrete issues (`FPJ037-QUALITY-01`);
+  - implementation attempt 2 fixed those issues and passed 29 focused tests plus the strengthened
+    real public-evidence verifier (`FPJ037-IMPL-02`).
+- State is restored to `verification / ready` with no owner. No repeated review agent remains
+  active, and no commit or push has been performed.
+
+
+## FPJ037-GATE-01
+
+- Task: FPJ-037 compact final gate under the user's single-review rule
+- Role completed: gate
+- Result: passed
+- Owner: `/root`
+- Decision basis:
+  - one full suite completed with exit 0: `266 passed, 1 skipped, 48 warnings in 224.20s`;
+  - the first independent verification and anti-pattern roles passed;
+  - the first quality role found concrete verifier, builder and derived-checkpoint issues;
+  - implementation attempt 2 fixed every P1/P2 finding and passed `29 focused tests in 2.58s`;
+  - the strengthened real verifier accepted 5 manifests, 120 FPJ-037 main episodes,
+    60 diagnostic episodes and the evidence safety scan;
+  - immutable FPJ-033 through FPJ-036 evidence remained unchanged.
+- User-directed scope decisions:
+  - do not repeat the complete verification -> anti-pattern -> quality cycle after focused fixes;
+  - do not create video materials; retain technical/defence documentation only.
+- Acceptance status:
+  - [x] matched full-channel code/detached seeds 0/1/2 are complete and independently recomputed;
+  - [x] all retained checkpoint bytes were hashed before removal and the A10 instance was stopped;
+  - [x] LF publication rules, evidence index and local public verifier are present;
+  - [x] public claims are limited to a three-seed, 20-episode-per-seed course result;
+  - [x] publication candidate contains no datasets, checkpoints, credentials or private paths;
+  - [x] documentation distinguishes main training cells from same-checkpoint diagnostics.
+- Nonblocking risks:
+  - three seeds remain too small for a significance claim;
+  - the optional derived-checkpoint report sidecar is a separate atomic file;
+  - a whole-repository safety scan remains part of each future release step.
+- Prohibited claims remain unchanged: no paper-level success-rate reproduction, no statistical or
+  universal target ranking, and no diagnostic rollout counted as a new training seed.
+- Next action: commit and push the gate-approved publication snapshot; no FPJ-038 video task.
+

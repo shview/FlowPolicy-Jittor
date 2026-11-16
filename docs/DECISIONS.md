@@ -350,3 +350,24 @@ checkpoint 在独立复核哈希后删除；实例于 2026-11-16 09:53（UTC+8�
 语义不同，也不能把 loss 比值直接解释成成功率比值。code 先运行并承担 JIT/缓存成本，因此本次墙钟
 时间不用于宣称某种 target 训练更快。
 
+## D024：三 seed 完整通道结果与同 checkpoint 诊断必须分开统计
+
+**决定**：FPJ-037 不改写 FPJ-036 seed 0，只在同一数据 SHA256、完整 `512/1024/2048` 通道、
+1024 点、batch 64、30 epochs、1050 updates、EMA 0.999 和 20-episode 协议下补跑 seeds 1/2。
+三 seed 主表只包含独立训练；从 seed-1 trainer 导出的在线/EMA、code/exact policy 单列为诊断，
+不冒充新的 seed。派生 policy 同时记录源 trainer 与派生文件 SHA256。
+
+**结果**：code 三 seed 为 10/20、5/20、2/20，即 **28.33% ± 20.21%**；detached 为
+6/20、9/20、1/20，即 **26.67% ± 20.21%**。两组分别成功 17/60 与 16/60，只差一个回合，
+样本标准差相同，因此本次完整通道短预算不支持稳定排名。全部 120 个主比较 episode 和配置匹配
+复算通过。
+
+**诊断**：seed 1 上，code 在线/code 为 5/20，EMA/code 为 2/20，在线/exact 为 3/20；detached
+在线/code 为 9/20，EMA/code 为 10/20。第一次诊断启动因缺少 `MUJOCO_GL=egl` 在产生任何 episode
+前退出；EGL hello 探测通过后复用同一派生 checkpoint 完成 60 个诊断 episode。实际 checkpoint
+文件、rollout 声明与 sidecar 哈希独立核对一致。
+
+**解释边界**：完整通道结果推翻的是“可以从小通道 35 个百分点差距直接外推”的做法，不是否定
+任何一种 target。诊断只覆盖一个 trainer seed，也不能证明 EMA 或 exact 切片普遍有效/无效。公开
+脱敏证据在 `evidence/fpj037/`；原始 Zarr、权重、私有路径和云端日志不进入仓库。
+

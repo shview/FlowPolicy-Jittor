@@ -315,6 +315,8 @@ def main(argv=None) -> int:
 
     summary = {
         "task": args.task,
+        "seed": args.seed,
+        "noise_seed": args.noise_seed,
         "data": str(args.data),
         "checkpoint": str(args.checkpoint),
         "checkpoint_sha256": sha256_file(args.checkpoint),

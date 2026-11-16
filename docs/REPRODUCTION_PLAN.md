@@ -214,6 +214,11 @@ A10 上使用完整 `512/1024/2048` 通道、255,138,308 个可训练参数、10
 显存为 11053/11741 MiB，策略延迟为 3.562/3.502 ms。该实验补上了 detached 的完整通道 CUDA
 可行性，但只有一个 seed，不能与上面的三 seed 表采用同一统计口径。
 
+FPJ-037 保留上述 seed 0 证据不变，只补跑 seeds 1/2。三 seed 汇总后 released-code 为
+10/20、5/20、2/20，即 **28.33% ± 20.21%**；detached 为 6/20、9/20、1/20，即
+**26.67% ± 20.21%**。两组只差一个成功回合，完整通道短预算没有形成稳定排名。另用 seed-1 trainer
+完成 60 个无重训 EMA/exact 诊断 episode，并与独立训练 seed 分开统计。
+
 ### 任务安排
 
 - CPU 低预算网格：`button-press-wall-v3` 与 `reach-v3`，保留作为早期闭环和脚本验证证据。
@@ -248,6 +253,8 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
   EMA loss target。结果为 51.67% ± 5.77% 对 16.67% ± 15.28%；逐 seed 匹配检查全部通过。
 - [x] A10 完整通道单 seed 配对：只改变 target 语义与 EMA 角色，记录显存、训练耗时、loss、哈希、
   checkpoint 重载误差和 40 个闭环结果；本次 seed 0 为 50% 对 30%，不作为多 seed 均值。
+- [x] A10 完整通道三 seed 扩展：只补 seeds 1/2，合并已发布 seed 0 后 code 为
+  28.33% ± 20.21%，detached 为 26.67% ± 20.21%；全部 120 个主比较 episode 独立复算通过。
 
 ### 验证清单
 
@@ -264,6 +271,12 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
       训练/验证/资源指标、匹配校验和全部 120 个 episode，不包含原始输出或 checkpoint。
 - [x] target 完整通道 A10 配对完成 2 modes × 1 seed × 20 episodes；`evidence/fpj036/` 保留配对检查、
       资源指标、hash、全部 40 个 episode 与实例停机记录，并明确单 seed 不提供均值或标准差。
+- [x] target 完整通道 seeds 1/2 按相同配置完成；code/detached 四个单元、独立 80-episode 复算和
+      checkpoint 哈希检查全部通过，新结果单独发布为 `evidence/fpj037/`。
+- [x] 基线封闭后，从同一 trainer checkpoint 导出 EMA/在线权重与 code/exact 动作切片的派生 policy，
+      用相同 seed、episode 和仿真协议评测；派生工具是 `scripts/derive_policy_checkpoint.py`，不重新训练。
+      `--report` sidecar 同时记录源 trainer 与派生 policy 的 SHA256；这些 rollout 单列为诊断，不能当作
+      新的训练 seed 合并进 target 三 seed 统计。
 
 ### 防止走偏
 
@@ -280,6 +293,7 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
 - 自动测试、配置、实验日志和结果表。
 - 第三方许可证和引用。
 - 已知差异、失败任务、预算和复现边界。
+- 单一公开证据索引，以及不依赖原始数据和权重的 `python scripts/verify_public_evidence.py` 校验入口。
 
 ### 答辩证据
 
@@ -287,7 +301,7 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
 - 一张 CFM 直观图：噪声、动作、直线路径和一致性约束。
 - 一张“PyTorch 上游—Jittor 迁移模块”对照表。
 - 一张定量结果表：成功率、延迟、NFE、显存。
-- 一段成功视频和一段有代表性的失败视频。
+- 一张成功/失败类型对照表，并能追溯到逐回合记录。
 - 关键模块现场可运行的短命令，而不是临时跑完整训练。
 
 ## 8. 最终验收
@@ -301,5 +315,7 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
 - [x] `reach-wall-v3` 的完整通道 A10 三 seed 有限预算结果已公开到 `evidence/fpj033/formal/`；
       与容易任务的比较使用匹配预算并明确标注为项目内有限预算对照。
 - [x] README 不夸大结果，论文/代码差异均被记录。
+- [x] 已发布证据可由 manifest 和逐 episode 记录独立复算；新增 target 三 seed 证据须单独写入
+      `evidence/fpj037/`，不得改写 FPJ-036。
 - [x] GitHub 仓库未跟踪数据集、checkpoint、训练输出或密钥；环境文档中的绝对路径仅用于说明可复现的隔离环境与云端挂载位置。
 

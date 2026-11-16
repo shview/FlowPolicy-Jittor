@@ -1,0 +1,105 @@
+{
+  "accelerator": "NVIDIA A10 23028 MiB",
+  "batch_size": 64,
+  "claim_boundary": [
+    "Finite-budget selected-task comparison, not the paper 3000-epoch 37-task result.",
+    "Diagnostics reuse seed-1 trainer checkpoints and are excluded from independent-seed aggregates."
+  ],
+  "cuda": "12.1.105",
+  "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+  "diagnostic_retry_note": "The first diagnostic attempt stopped before any episode because MUJOCO_GL was absent; an EGL hello probe passed and all three complete rollouts were then run with MUJOCO_GL=egl.",
+  "diagnostics": [
+    {
+      "action_slice_mode": "code",
+      "checkpoint_reload_max_abs_delta": 3.5762786865234375e-07,
+      "derived_policy_sha256": "23fe32bfc1d1ad3e29a46896d046ddd6f207c67de51a5f27ba29567d06df2362",
+      "episodes": 20,
+      "label": "code-seed1-ema-code",
+      "source_trainer_sha256": "760c57bf80f5cb56e79d29634e5c7a86a13a94bba4a6bf2c710475e0d57f7ccd",
+      "successes": 2,
+      "target_mode": "code",
+      "total_steps": 4000,
+      "weights": "ema"
+    },
+    {
+      "action_slice_mode": "exact",
+      "checkpoint_reload_max_abs_delta": 3.844499588012695e-06,
+      "derived_policy_sha256": "9c3dc88f754872eecb338f8a99c16c3590e008ab3e257ebe73144ffa17979fa9",
+      "episodes": 20,
+      "label": "code-seed1-online-exact",
+      "source_trainer_sha256": "760c57bf80f5cb56e79d29634e5c7a86a13a94bba4a6bf2c710475e0d57f7ccd",
+      "successes": 3,
+      "target_mode": "code",
+      "total_steps": 4000,
+      "weights": "online"
+    },
+    {
+      "action_slice_mode": "code",
+      "checkpoint_reload_max_abs_delta": 1.990795135498047e-05,
+      "derived_policy_sha256": "79bba21694c5c538d5982d776575964ce7a0dfad31b651218ef2da70c59712a5",
+      "episodes": 20,
+      "label": "detached-seed1-ema-code",
+      "source_trainer_sha256": "d697061c0223394f64615c90ab91524711638fec13961cc94cd13e9d46cb8999",
+      "successes": 10,
+      "target_mode": "detached",
+      "total_steps": 4000,
+      "weights": "ema"
+    }
+  ],
+  "episodes_per_seed": 20,
+  "epochs": 30,
+  "gpu_sample_peak_mib": 14791,
+  "gpu_samples": 10348,
+  "independent_checkpoint_hashes_passed": true,
+  "jittor": "1.3.11.0",
+  "main_extension_cells": [
+    {
+      "episodes": 20,
+      "policy_sha256": "dcc5f6d9cdab2e1400aed73a17b5df77de8ffb0bb2d202e17754daa57d3e705d",
+      "seed": 1,
+      "successes": 5,
+      "target_mode": "code",
+      "total_steps": 4000,
+      "trainer_sha256": "760c57bf80f5cb56e79d29634e5c7a86a13a94bba4a6bf2c710475e0d57f7ccd"
+    },
+    {
+      "episodes": 20,
+      "policy_sha256": "5d3994582b6948d2bb5dec26f33284f0c4b70edad37823cb4d33409a1f59350e",
+      "seed": 2,
+      "successes": 2,
+      "target_mode": "code",
+      "total_steps": 4000,
+      "trainer_sha256": "fc26f3184626d44ea821925d642fc3deeeee5cefd8e1583151ad321b405152e1"
+    },
+    {
+      "episodes": 20,
+      "policy_sha256": "5328f08fb9fcf4cf87f3f94ae3029c9096c36843fe6d75c647e7c016aa3174d2",
+      "seed": 1,
+      "successes": 9,
+      "target_mode": "detached",
+      "total_steps": 4000,
+      "trainer_sha256": "d697061c0223394f64615c90ab91524711638fec13961cc94cd13e9d46cb8999"
+    },
+    {
+      "episodes": 20,
+      "policy_sha256": "e6ee1c0534e0ca29eb908911c4776cca7968997ff32c7616a8212200ec389732",
+      "seed": 2,
+      "successes": 1,
+      "target_mode": "detached",
+      "total_steps": 4000,
+      "trainer_sha256": "fc507f45bc0d1e2a689785f010c2567e76c4ff7378b27bdebc4d90e2c0ed6aff"
+    }
+  ],
+  "matched_validation_passed": true,
+  "max_steps": 200,
+  "model_channels": [
+    512,
+    1024,
+    2048
+  ],
+  "num_points": 1024,
+  "platform": "Alibaba Cloud PAI-DSW",
+  "python": "3.11.11",
+  "schema_version": 1,
+  "task": "reach-wall-v3"
+}

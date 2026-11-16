@@ -1,0 +1,45 @@
+{
+  "claim_boundary": [
+    "This is a selected-task, 30-epoch finite-budget comparison, not the paper's 3000-epoch 37-task result.",
+    "The modern MetaWorld/MuJoCo stack is a documented substitute for the paper's older simulator stack.",
+    "Success rates are recomputed from every declared closed-loop episode; training loss is not used as a proxy for task success.",
+    "The comparison isolates released-code target semantics versus a detached EMA loss target; it does not prove either semantic is universally superior."
+  ],
+  "excluded": [
+    "raw Zarr demonstrations",
+    "policy and trainer checkpoint bytes",
+    "subprocess and GPU sample logs",
+    "absolute cloud paths and instance identifiers",
+    "credentials and secrets"
+  ],
+  "files": {
+    "SUMMARY.md": {
+      "sha256": "9a6c058cfd88a0886dd36b7686e9166d4d06c84b36c7eddf7732ae9c8cfc6e9d",
+      "size_bytes": 1576
+    },
+    "cloud_metadata.json": {
+      "sha256": "3223336bed809555b57af4984f02b4083763fdc557e0f3bd5eae4b20794017cc",
+      "size_bytes": 3755
+    },
+    "comparison.json": {
+      "sha256": "5713cf559287d1e5dcf8e52028e384ac51642d01c85404bd2c4ffa16d3515484",
+      "size_bytes": 64122
+    },
+    "diagnostics.json": {
+      "sha256": "0131af8e566767fb97c3d25ac596eb9f67b20093fd269f535ff146ebb9fe0382",
+      "size_bytes": 20532
+    }
+  },
+  "git_commit_at_generation": "628a0fb101c7eef77917df296096a020239a1af0",
+  "schema_version": 1,
+  "source_files_sha256": {
+    "base_comparison.json": "9711db0e0cb96f29e72c93028910110c683323da7ace3b54b1aad0ba2533e537",
+    "code-seed1-ema-code.derivation.json": "53da818d4003c0dcc7597f6dcc44c01390529042019c95bf9b3490c37dad6eaf",
+    "code-seed1-ema-code.rollout.json": "c9bea9804429917f04f0734feb5c5c5f7ff5fc55e849b60d94c321b979d6e3de",
+    "code-seed1-online-exact.derivation.json": "437b2ae3f022fd2ac7d86e8d82c6596098b3dcaf969817441972106961e86b0a",
+    "code-seed1-online-exact.rollout.json": "0e8da4885952dbf50c5291e7478401aa19dcd2ed02a81d97d485b28d9863e658",
+    "detached-seed1-ema-code.derivation.json": "2df904717279a9856abb15e8718df9b001ca52d206473eafe25ac0acac015aa7",
+    "detached-seed1-ema-code.rollout.json": "e0d3f561783cb7fdc76f198ebd98a332dc17e4bab8679822e0bfbf3d7d6d13b4",
+    "extension_experiments.json": "20dfefca1fa4a1dacd9e8f7ee91cc5099d3914c2f26d5d880eba371bb870de3e"
+  }
+}
