@@ -6,7 +6,7 @@ project:
   name: flowpolicy-jittor
   version: "0.1.0"
   upstream_commit: "86d10c14972b4eab083abec9026749c340f8e5ed"
-  git_status: "FPJ-036 passed gate; docs and sanitized evidence are ready for the user-authorized commit/push on top of published a24ae558; datasets, raw outputs and checkpoints remain untracked"
+  git_status: "FPJ-036 gate-approved docs and sanitized evidence were published to origin/main in commit 0bb18b7; datasets, raw outputs and checkpoints remain untracked"
 
 environment:
   platform: "WSL2 Ubuntu"
@@ -40,7 +40,7 @@ current:
   stage: gate
   status: done
   owner: null
-  last_handoff_id: FPJ036-GATE-01
+  last_handoff_id: FPJ036-PUBLISH-01
   next_stage: next_task
   role_handoffs:
     implementation: FPJ036-IMPL-02

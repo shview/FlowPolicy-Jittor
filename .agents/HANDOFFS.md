@@ -3622,3 +3622,16 @@
   approved by the user; root may now perform the already-authorized publication commit/push.
 
 
+## FPJ036-PUBLISH-01
+
+- After `FPJ036-GATE-01` passed, root created commit
+  `0bb18b7c1748fcacb38a6acc03d5baf61bcc618a` with the gate-approved documentation, serial-review
+  records and four-file sanitized `evidence/fpj036/` bundle.
+- Push succeeded: `origin/main` advanced from `a24ae558` to `0bb18b7` at
+  `https://github.com/shview/FlowPolicy-Jittor`.
+- No dataset, raw output, checkpoint, credential or cloud-private identifier was included. The
+  cloud instance remained stopped and no additional experiment or pytest run occurred during
+  publication.
+- FPJ-036 remains `gate / done`; no next task is activated without a new user-approved objective.
+
+
