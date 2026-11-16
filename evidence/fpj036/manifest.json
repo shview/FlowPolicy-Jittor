@@ -1,0 +1,37 @@
+{
+  "claim_boundary": [
+    "This is a paired comparison at seed 0 only; it does not provide mean or standard deviation across seeds.",
+    "It tests the selected reach-wall-v3 task and does not reproduce paper-scale multi-task success rates.",
+    "The observed 50% versus 30% success rates are run-specific evidence, not proof that one target semantic is generally superior.",
+    "All episodes intentionally run to the 200-step cap; success_steps counts successful observations and is not an early-stop time."
+  ],
+  "excluded": [
+    "raw Zarr demonstrations",
+    "policy and trainer checkpoint bytes",
+    "subprocess logs",
+    "absolute cloud paths",
+    "credentials and secrets"
+  ],
+  "files": {
+    "SUMMARY.md": {
+      "sha256": "3c7edb5c4cf5c9b7b44e1d621eb6bc0faf2ba6873b893caeeb377849d76ed3a5",
+      "size_bytes": 1301
+    },
+    "cloud_metadata.json": {
+      "sha256": "1836f03a6d0eec3fcc56ffe41d2a2e3431a4f600d0427dab639d3e53ed1f4716",
+      "size_bytes": 2790
+    },
+    "comparison.json": {
+      "sha256": "9711db0e0cb96f29e72c93028910110c683323da7ace3b54b1aad0ba2533e537",
+      "size_bytes": 19187
+    }
+  },
+  "git_commit_at_generation": "a24ae5581aa28969b4cbe2c8dfa052145b750cf0",
+  "normalization": {
+    "comparison_json_semantically_equal_to_cloud_bundle": true,
+    "note": "The downloaded comparison JSON was normalized only for whitespace and line wrapping before committing.",
+    "source_cloud_sha256": "884487993ad52717d7f252b8ea2d67977d8d319463e7dd51212dcf5ad2152202",
+    "source_cloud_size_bytes": 24250
+  },
+  "schema_version": 1
+}

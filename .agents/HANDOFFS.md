@@ -3349,3 +3349,276 @@
   feasibility run, initially one seed only, with mandatory quota check and instance shutdown.
 
 
+## FPJ036-IMPL-01
+
+- Task: FPJ-036 implementation, attempt 1.
+- Cloud run: Alibaba PAI-DSW A10 23028 MiB, commit `a24ae558`, `reach-wall-v3`, seed 0,
+  full 512/1024/2048 channels, 1024 points, batch 64, 30 epochs / 1050 updates, EMA 0.999 and
+  20 episodes per arm. Matched validation passed; only target semantics and EMA role differ.
+- Result: released-code + stored EMA 10/20 (50%), detached EMA loss target 6/20 (30%). Mean
+  policy latency was 3.562/3.502 ms; sampled train peak was 11053/11741 MiB; validation loss was
+  `4.847e-6`/`1.117e-4`. All 40 episodes ran 200 steps and ended with `step_cap`.
+- Recovery: the first combined run completed code, then detached hit ENOSPC while saving a periodic
+  trainer checkpoint. Closed redundant trainer checkpoints were removed; `--reuse` retained the
+  completed code training and rollout and reran detached from the beginning. The resume returned 0.
+- Checkpoints: policy/trainer hashes were independently reread. Reload max action deltas were
+  `2.0802e-5` (code) and `1.1921e-7` (detached), not zero. Large trainer checkpoints were deleted
+  after hashing; both policy checkpoints remain on the stopped system disk.
+- Public files: added `evidence/fpj036/{comparison.json,SUMMARY.md,manifest.json,cloud_metadata.json}`;
+  no dataset, checkpoint, absolute cloud path, credential or private instance identifier is included.
+- Documentation: updated README, D023, reproduction plan, cloud record and defence guide with the
+  result, recovery, cost and claim boundaries.
+- Cloud state: instance stopped state confirmed at 2026-11-16 09:53 (UTC+8); console retention
+  warning is 15 days while stopped. No seeds 1/2 extension was started.
+- Evidence validation: manifest hashes matched all three files; comparison has 2 cells, 40 episodes,
+  matched validation true and metadata final state `stopped`; `git diff --check` passed.
+- Single exact full test per user instruction: exit 0, `249 passed, 1 skipped, 48 warnings in 215.93s`.
+  The skip is `tests/test_conv1d_parity.py:12` because torch is absent from the core Jittor
+  environment; it is not counted as passed.
+- Remaining boundary: one seed gives feasibility and a run-specific 50%/30% observation only. It
+  does not provide a mean, standard deviation, general target ranking or paper-scale reproduction.
+  The code arm paid cold JIT/cache costs, so wall seconds per step are not an algorithmic speed claim.
+- Next role: verification should reuse the exact single suite, independently recompute the public
+  evidence invariants and inspect claim consistency without running another full pytest pass.
+
+
+## FPJ036-VERIFY-01
+
+- Task: FPJ-036 verification, attempt 1.
+- Full suite was not rerun under the user's explicit single-check rule. Verification accepted the
+  implementation command's exact exit-0 result: `249 passed, 1 skipped, 48 warnings in 215.93s`.
+  The skipped torch-absent parity test remains separate and is not counted as passed.
+- Independent public-evidence checks passed:
+  - HEAD, comparison and manifest generation commit all equal
+    `a24ae5581aa28969b4cbe2c8dfa052145b750cf0`;
+  - manifest SHA256 and byte sizes match `SUMMARY.md`, `comparison.json` and
+    `cloud_metadata.json`;
+  - two status-ok cells contain 40 total episodes; every episode has 200 steps and
+    `done_reason=step_cap`;
+  - preflight and matched validation are true; shared seed/dims/points/batch/epochs/EMA/data hash
+    are 0, 512/1024/2048, 1024, 64, 30, 0.999 and
+    `01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210`;
+  - recomputed outcomes are code 10/20 and detached 6/20; resource records are 11053/11741 MiB
+    train peak and 3.562/3.502 ms mean latency;
+  - policy/trainer hashes agree across cell summaries and independent post-run records;
+  - initial attempt return code 1 and successful resume return code 0 agree with the ENOSPC
+    recovery note;
+  - cloud metadata is sanitized, redacts the private instance identifier, reports final state
+    `stopped` at 2026-11-16 09:53:44 +08:00 and records the 15-day retention notice;
+  - no credential, private instance/workspace id or absolute cloud path was found in
+    `evidence/fpj036/`; all files are below 20 KiB;
+  - docs consistently label 50%/30% as one paired seed, retain the loss/JIT/cache caveats and do
+    not claim a three-seed target result or general target ranking.
+- Forbidden-path check found no diff under datasets or `evidence/fpj033`–`fpj035`; the upstream
+  comparison worktree is clean. `git diff --check` passed.
+- Blocking acceptance gap: the retained pre-start record shows an active free DSW package of
+  250 compute-hours per cycle for three cycles at price 0 and the A10 rate of 6.991
+  compute-hours/hour, but it does not show the exact remaining balance after earlier use. The
+  acceptance item explicitly requested that exact remaining quota before start. It cannot be
+  reconstructed or inferred after the fact.
+- Disposition: experiment/result evidence remains valid, but FPJ-036 returns to implementation
+  attempt 2 to disclose the missing administrative value accurately and decide how the acceptance
+  item is closed. No product, documentation, evidence, cloud, commit or push action occurred in
+  verification.
+
+
+## FPJ036-IMPL-02
+
+- Task: FPJ-036 implementation, attempt 2; closes the quota-record blocker from
+  `FPJ036-VERIFY-01` without changing the scientific experiment.
+- Read-only Alibaba Cloud billing review found the authoritative resource-package usage ledger.
+  The DSW trial package has 250 calculation hours per cycle for three cycles. The latest ledger
+  entry before the experiment's 07:48:50 start was recorded at 07:06:49: balance before 200.743,
+  deduction 5.265 and balance after **195.478 calculation hours**. No later ledger entry precedes
+  the start time.
+- Caveat retained: Alibaba Cloud says deduction details may lag resource use by about six hours.
+  The evidence therefore calls 195.478 the provider-recorded pre-start ledger balance; it is not
+  presented as an estimate of unbilled consumption.
+- Added the sanitized quota record to `evidence/fpj036/cloud_metadata.json`, refreshed its manifest
+  SHA256/size, and updated D023 plus `docs/CLOUD_ALIYUN.md`. No account name, resource-package ID,
+  workspace/instance ID, absolute path or credential was published.
+- Independent local check: metadata manifest hash matches; ledger time precedes experiment start;
+  balance is 195.478; cloud final state remains stopped; comparison remains 2 cells / 40 episodes;
+  sensitive-string scan returned no match; `git diff --check` passed.
+- Browser cleanup: closed only the agent-created Alibaba trial, quota and DSW tabs; user tabs and
+  the shared web-access proxy were left intact. The cloud instance was not restarted.
+- Full pytest was not rerun: the user's single-check result remains the exact exit-0
+  `249 passed, 1 skipped, 48 warnings in 215.93s` from implementation attempt 1.
+- Next role: verification should independently confirm the ledger chronology, manifest hash and
+  sanitization, then reuse all scientific-evidence findings from `FPJ036-VERIFY-01`.
+
+
+## FPJ036-VERIFY-02
+
+- Task: FPJ-036 verification, attempt 2.
+- Full pytest was not rerun under the user's single-check rule. The accepted exact implementation
+  result remains exit 0, `249 passed, 1 skipped, 48 warnings in 215.93s`; the torch-absent parity
+  skip is separate and not counted as passed.
+- Independently parsed the new quota ledger record in `cloud_metadata.json`:
+  - package capacity is 250 calculation hours per cycle for three cycles;
+  - latest recorded deduction before experiment start is 2026-11-16 07:06:49 +08:00;
+  - experiment start is 07:48:50, so the ledger entry precedes it by 42.017 minutes;
+  - `200.743 - 5.265 = 195.478` exactly at the published precision;
+  - the source states no later ledger entry precedes the experiment start;
+  - the six-hour billing-lag caveat explicitly labels 195.478 as a provider-recorded ledger
+    balance, not an estimate of unbilled consumption.
+- Manifest check passed for all three declared files: SHA256 and byte size match `SUMMARY.md`
+  (1301 bytes), `comparison.json` (19187 bytes) and updated `cloud_metadata.json` (2790 bytes,
+  SHA256 `1836f03a6d0eec3fcc56ffe41d2a2e3431a4f600d0427dab639d3e53ed1f4716`).
+- Sanitization check found no workspace id, real instance/package id, account name, credential,
+  absolute local/cloud path or secret. `instance_identifier` is explicitly
+  `redacted_in_public_bundle`.
+- Scientific evidence from `FPJ036-VERIFY-01` remains unchanged: two matched cells, 40 episodes,
+  code 10/20 versus detached 6/20, all 200-step `step_cap`, matching checkpoint hashes and stopped
+  cloud state. The comparison JSON hash is unchanged.
+- `docs/CLOUD_ALIYUN.md`, D023 and STATE consistently publish the timestamp, balance and billing-lag
+  boundary. No text presents 195.478 as real-time unbilled capacity.
+- Forbidden datasets and `evidence/fpj033`–`fpj035` have no diff; upstream comparison worktree is
+  clean. `git diff --check` passed.
+- Acceptance blocker from `FPJ036-VERIFY-01` is closed. No new P1/P2 verification finding remains.
+- No product, documentation, evidence, cloud, network, commit or push action occurred in this
+  verification role. Next role: anti-pattern review, reusing the single test result.
+
+
+## FPJ036-AP-01
+
+- Task: FPJ-036 anti-pattern review, attempt 2. Product/docs/evidence were read-only; only this
+  append-only handoff and the serial state transition were written.
+- Full pytest was not rerun under the user's single-check rule. The accepted exact result remains
+  exit 0, `249 passed, 1 skipped, 48 warnings in 215.93s`; the torch-absent skip is not counted.
+- P1/blocking findings: none.
+- P2 findings: none.
+- Claim-boundary audit passed:
+  - `README.md:143-158`, `docs/DECISIONS.md:331-351`, `docs/DEFENSE_GUIDE.md:134-142`,
+    `docs/REPRODUCTION_PLAN.md:212-215,249-250` and `evidence/fpj036/SUMMARY.md:19` all label
+    10/20 versus 6/20 as seed-0/run-specific evidence, not a mean, standard deviation, stable
+    ranking or paper-scale result;
+  - `README.md:152-153` and `docs/DECISIONS.md:349-351` prevent cross-target loss values or the
+    cold-JIT/warm-cache wall times from being treated as causal task-performance/speed evidence;
+  - `evidence/fpj036/manifest.json:6` and `docs/DEFENSE_GUIDE.md:195` state that all episodes run
+    to the 200-step cap and `success_steps` is not an early-stop time.
+- Cloud/cost audit passed:
+  - `cloud_metadata.json:9-12` and `docs/CLOUD_ALIYUN.md:19,126-128` state the instance is stopped,
+    preserve the 15-day stopped-disk warning and do not claim a seeds-1/2 extension;
+  - quota arithmetic is exact (`200.743 - 5.265 = 195.478`), the 07:06:49 ledger entry precedes
+    the 07:48:50 start, and `cloud_metadata.json:26` plus `docs/CLOUD_ALIYUN.md:117-120` call it a
+    provider-recorded ledger balance with an approximately six-hour billing-lag caveat, not
+    real-time unbilled capacity.
+- Recovery/provenance audit passed:
+  - both matched cells are status-ok with 40 total 200-step episodes; outcomes recompute to 10/20
+    and 6/20; matched validation is true;
+  - code reports training/rollout reuse true while detached reports false, agreeing with the ENOSPC
+    recovery note: completed code was retained and detached restarted; the successful resume
+    returned 0;
+  - all manifest SHA256/byte sizes match, checkpoint hashes are recorded rather than checkpoint
+    bytes, and metadata says trainer checkpoints were removed only after hashing.
+- Publication safety passed: the bundle contains four small `.json`/`.md` files only; scans found
+  no real instance/workspace/resource-package/account ID, credential, absolute path, Zarr data or
+  checkpoint bytes. Forbidden datasets and `evidence/fpj033`-`fpj035` have no diff; the upstream
+  comparison worktree is clean; `git diff --check` passed.
+- P3 (non-blocking): the generic comparison schema still calls the single-seed aggregate field
+  `success_rate_mean` (`comparison.json:319,339`), but `seeds=[0]`, `success_rate_std=null`, the
+  per-seed array and multiple adjacent claim boundaries make the statistical limitation explicit.
+  Consumers should use the public summary rather than infer a multi-seed mean from that field name.
+- Prohibited claims remain: no paper success rate/full recipe, no three-seed full-channel target
+  result, no general code-over-detached ranking, no algorithmic speed ratio and no universal
+  bit-exact resume claim.
+- Next role: quality should probe malformed/partial evidence and interpretation counterexamples
+  without rerunning the full suite or modifying product/docs/evidence.
+
+
+## FPJ036-QUAL-01
+
+- Task: FPJ-036 quality review, attempt 2. Product/docs/evidence remained read-only; only the
+  append-only handoff and serial state transition were written.
+- Full pytest was not rerun under the user's single-check rule. The accepted exact result remains
+  exit 0, `249 passed, 1 skipped, 48 warnings in 215.93s`; the torch-absent skip is separate.
+- P1/blocking findings: none.
+- Evidence invariants independently recomputed:
+  - all manifest SHA256/byte sizes match, the bundle contains exactly the three declared payloads
+    plus its manifest, and no extra/unlisted payload exists;
+  - quota arithmetic is exact (`200.743 - 5.265 = 195.478`) and the 07:06:49 +08:00 ledger entry
+    precedes the 07:48:50 start by 42.017 minutes;
+  - full chronology is ordered: quota ledger < instance start < initial experiment start/end <
+    resume start/end < stopped confirmation;
+  - two matched cells contain 40 episodes; every episode is 200-step `step_cap`; success flags
+    agree with positive `success_steps`, recomputing to code 10/20 and detached 6/20;
+  - code has `train_reused=true` and `rollout_reused=true`, detached has both false, consistent
+    with retaining the completed code arm and restarting detached after ENOSPC;
+  - train+rollout walls (2989.86 s code, 1676.74 s detached) fit inside the recorded 3282 s
+    initial and 1752 s resume process windows; this is a consistency check, not a speed claim;
+  - sampled train-memory delta recomputes to 688 MiB; policy/trainer/config/data hashes are
+    internally consistent; checkpoint reload deltas remain explicitly nonzero.
+- Publication safety passed: only four small JSON/Markdown files are present; no ignored file,
+  raw dataset, checkpoint bytes, private instance/workspace/package/account ID, credential or
+  absolute path was found. Forbidden evidence/dataset paths and upstream comparison remain clean;
+  `git diff --check` passed.
+- P2 (nonblocking, portability): byte-level evidence hashes are line-ending sensitive. This
+  checkout has `core.autocrlf=true`, no `.gitattributes` rule fixes `evidence/fpj036/**` to LF, and
+  `git check-attr text eol` reports both attributes unspecified. All three hashed payloads currently
+  use LF only, and an in-memory LF-to-CRLF counterexample changes every SHA256. GitHub raw files and
+  Linux/WSL clones retain the verified hashes, but a fresh Windows checkout may rewrite line endings
+  and make the byte manifest appear invalid. A future scoped hardening task should pin evidence
+  files to `eol=lf` or define a canonical hash procedure; this does not change the present raw Git
+  blob contents or scientific result.
+- P3 (inherited): `success_rate_mean` is a generic single-seed aggregate field, but `seeds=[0]`,
+  `success_rate_std=null`, per-seed arrays and adjacent claim boundaries prevent a statistical
+  interpretation. The sanitized quota record is also an authenticated-ledger transcription rather
+  than a public billing export; its arithmetic/timestamps were independently checked and the
+  billing-lag caveat is explicit.
+- Claim-language quality passed: docs do not turn the single seed into a mean/ranking, loss into a
+  cross-mode causal measure, cold/warm wall times into speed evidence, or `success_steps` into an
+  early-stop time. `actual_after_run` checkpoint records and later cleanup metadata are consistent,
+  although readers should use `cloud_metadata.cleanup` for final retention state.
+- Gate may pass with the P2/P3 debts recorded: all seven acceptance items have evidence, no P1
+  remains, the instance is stopped and no paid/three-seed extension occurred.
+
+
+## FPJ036-GATE-01
+
+- Task: FPJ-036 gate, attempt 2.
+- Decision: **PASS**. Implementation, verification, anti-pattern and quality handoffs are complete;
+  no P1/blocking finding remains.
+- The user's single-check rule was honored. Gate did not rerun pytest and accepts the exact exit-0
+  implementation result: `249 passed, 1 skipped, 48 warnings in 215.93s`. The skipped
+  `tests/test_conv1d_parity.py:12` lacks torch in the core Jittor environment and is not counted.
+- Acceptance 1 PASS: local HEAD and `origin/main` are both
+  `a24ae5581aa28969b4cbe2c8dfa052145b750cf0`, so FPJ-035 and its 249-pass baseline were published
+  before the cloud run; comparison and manifest generation commits match that exact commit.
+- Acceptance 2 PASS: the existing A10 public-resource instance was used. The authenticated package
+  ledger shows 250 calculation hours per cycle and a latest pre-start post-deduction balance of
+  195.478 at 07:06:49, before the 07:48:50 start. The approximately six-hour billing-lag caveat is
+  explicit, so this is a provider ledger balance rather than an unbilled-use estimate.
+- Acceptance 3 PASS: evidence records CUDA execution, the EGL/MetaWorld rollout path and the exact
+  `reach-wall-v3` data SHA256
+  `01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210`.
+- Acceptance 4 PASS: both status-ok arms use seed 0, 512/1024/2048 channels, 1024 points, batch 64,
+  30 epochs / 1050 updates, EMA 0.999 and 20 episodes; preflight and matched validation pass, with
+  only target semantics/EMA role differing.
+- Acceptance 5 PASS: both arms retain train/validation loss, wall and per-step time, sampled peak
+  GPU memory, checkpoint/config/data hashes, latency and all 40 episode outcomes. Recomputed result
+  is code 10/20 versus detached 6/20; every episode is 200-step `step_cap`.
+- Acceptance 6 PASS: all manifest SHA256/byte sizes match; the four-file public bundle contains no
+  dataset, checkpoint bytes, private IDs/paths or credentials. It labels the result one paired seed,
+  not a mean, standard deviation, paper result or general target ranking.
+- Acceptance 7 PASS: the stopped state was confirmed at 2026-11-16 09:53:44 +08:00 after evidence
+  capture and cleanup; seeds 1/2 were not started. Trainer checkpoints were removed only after
+  independent hashing; retained policy checkpoints stay on the stopped disk.
+- Recovery is accepted: code training/rollout are explicitly reused after ENOSPC, detached is
+  explicitly rerun, and the successful resume returns 0. The cold-JIT/warm-cache wall-time ratio is
+  not an algorithmic speed claim; cross-mode loss values are not treated as causal success metrics.
+- Publication and forbidden-path checks pass: no diff exists under datasets or
+  `evidence/fpj033`-`fpj035`; upstream comparison is clean; `git diff --check` passes.
+- Nonblocking debt:
+  - P2: evidence byte hashes are line-ending sensitive because no `.gitattributes` pins LF; current
+    Git blobs are valid, but a future hardening task should pin `evidence/**` or define canonical
+    hashing before relying on Windows worktree bytes.
+  - P3: the generic schema field `success_rate_mean` contains the single-seed aggregate, but
+    `seeds=[0]`, `success_rate_std=null` and adjacent claim boundaries prevent a multi-seed claim.
+- Remaining prohibited claims: no paper success rate/full recipe, no three-seed full-channel target
+  result, no general code-over-detached ranking, no algorithmic training speed ratio and no
+  universal bit-exact resume claim.
+- State is marked `gate / done`. The queue marker remains unchanged because no next task has been
+  approved by the user; root may now perform the already-authorized publication commit/push.
+
+

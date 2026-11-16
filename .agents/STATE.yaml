@@ -1,12 +1,12 @@
 schema_version: 1
 execution_mode: serial
-updated_on: "2026-11-15"
+updated_on: "2026-11-16"
 
 project:
   name: flowpolicy-jittor
   version: "0.1.0"
   upstream_commit: "86d10c14972b4eab083abec9026749c340f8e5ed"
-  git_status: "FPJ-033 gate-approved source/docs/tests and 15 public evidence files are the current main-line publication candidate; datasets, raw outputs and checkpoints remain local"
+  git_status: "FPJ-036 passed gate; docs and sanitized evidence are ready for the user-authorized commit/push on top of published a24ae558; datasets, raw outputs and checkpoints remain untracked"
 
 environment:
   platform: "WSL2 Ubuntu"
@@ -23,7 +23,7 @@ environment:
   cloud_cuda: "12.1.105"
   cloud_cuda_verified: true
   cloud_simulator_ready: true
-  cloud_instance_state: "stopped manually on 2026-11-15 20:25 after the console reported about 4h35m cumulative service; free system disk retention is 15 days while stopped"
+  cloud_instance_state: "stopped state confirmed on 2026-11-16 09:53 after FPJ-036 evidence capture and checkpoint cleanup; free system disk retention is 15 days while stopped"
 
 baseline:
   command: "wsl.exe -d Ubuntu -- /home/s/.local/share/flowpolicy/miniforge-py310/bin/python -m pytest -q"
@@ -31,22 +31,22 @@ baseline:
   skipped:
     - test: "tests/test_conv1d_parity.py"
       reason: "The core Jittor environment does not install PyTorch; conv1d/Autograd parity is now also measured end to end by scripts/parity_check.py in the separate parity-env."
-  note: "FPJ-035 final corrected run: 249 passed, 1 skipped, 48 warnings in 228.00s. The first full attempt exposed two test-fixture KeyErrors (247 passed); validation was hardened to fail closed on missing rollout protocol fields, then the single necessary full rerun passed. The torch-absent parity skip is not counted."
+  note: "FPJ-036 used the user's single-check rule: 249 passed, 1 skipped, 48 warnings in 215.93s. The skip is tests/test_conv1d_parity.py because torch is absent from the core Jittor environment and is not counted as passed."
 
 current:
   task_id: FPJ-036
   title: "A10 full-channel paired target validation"
-  attempt: 1
-  stage: implementation
-  status: ready
+  attempt: 2
+  stage: gate
+  status: done
   owner: null
-  last_handoff_id: FPJ035-GATE-01
-  next_stage: verification
+  last_handoff_id: FPJ036-GATE-01
+  next_stage: next_task
   role_handoffs:
-    implementation: null
-    verification: null
-    anti_pattern: null
-    quality: null
+    implementation: FPJ036-IMPL-02
+    verification: FPJ036-VERIFY-02
+    anti_pattern: FPJ036-AP-01
+    quality: FPJ036-QUAL-01
     gate: null
   objective: >-
     Use the authorized Alibaba Cloud PAI-DSW A10 instance to compare released-code and detached-EMA
@@ -87,17 +87,18 @@ current:
       -m pytest -q
 
 known_gaps:
+  - "Alibaba Cloud's historical resource-package ledger closes the FPJ-036 quota record: the latest deduction before the 07:48 start was recorded at 07:06:49 and left 195.478 of 250 calculation hours. The console warns deductions can lag use by about six hours, so this is a pre-start ledger balance rather than an estimate of unbilled consumption."
   - "FPJ-035 found detached worse under 710-update small-channel CPU training; it does not predict full-channel A10 behavior."
-  - "The prior FPJ-033 A10 code arm lacks explicit current target/EMA provenance, so both FPJ-036 arms must be rerun rather than spliced."
+  - "FPJ-036 is one paired seed only: code 10/20 and detached 6/20 are run-specific observations, not a mean, standard deviation or general target ranking."
   - "Long-process CPU resume is state-correct but not universally bit-exact; FPJ-031's measured 1e-2 tolerance remains unless new evidence narrows it."
-  - "Local WSL CUDA remains unavailable. The user explicitly authorized cloud validation after local completion; the DSW instance is currently stopped and must be stopped again after evidence capture."
+  - "Local WSL CUDA remains unavailable. FPJ-036 used the authorized A10 instance, captured evidence, removed large trainer checkpoints after hashing and confirmed the instance stopped."
   - "Published FPJ-032/033/034/035 evidence and all recorded datasets/checkpoints must remain unchanged."
   - "Evidence-bundle sanitizer/atomicity/schema and experiment --reuse provenance have nonblocking P2 debt from FPJ-033; they are outside FPJ-034 unless separately queued."
 
 prohibited_claims:
   - "one cloud seed establishes a mean or sample standard deviation"
   - "paper success rate or full paper recipe reproduced"
-  - "the local target ordering must hold on full-channel A10 before the paired run completes"
+  - "code generally or statistically outperforms detached from the single FPJ-036 seed"
   - "three-seed full-channel target comparison completed"
-  - "cloud result produced before evidence and instance-stop confirmation"
+  - "training wall-time ratio is an algorithmic speed comparison because the arms had different JIT/cache order"
   - "bit-exact save/resume in every process history"

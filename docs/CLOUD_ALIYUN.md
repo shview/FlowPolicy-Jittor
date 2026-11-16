@@ -1,6 +1,6 @@
 # 阿里云 PAI-DSW A10 环境记录
 
-记录日期：2026-11-15。该环境用于验证 Jittor CUDA、真实数据训练、完整论文通道配置和无机械臂仿真。
+更新日期：2026-11-16。该环境用于验证 Jittor CUDA、真实数据训练、完整论文通道配置和无机械臂仿真。
 
 ## 实例与持久化目录
 
@@ -16,7 +16,7 @@
 | 仿真 venv | `/mnt/workspace/venvs/flowpolicy-sim` |
 | JIT 缓存 | `/mnt/workspace/.cache/jittor` |
 | 日志 | `/mnt/workspace/logs` |
-| 最终停机状态 | 2026-11-15 20:25 已手动停止，控制台记录累计服务时长约 4 小时 35 分钟 |
+| 最终停机状态 | FPJ-036 完成后于 2026-11-16 09:53（UTC+8）确认“已停止” |
 
 训练环境使用 Jittor 1.3.11.0、NumPy 1.26.4、Zarr 2.18.7；仿真环境使用 MuJoCo 3.3.7、Meta-World 3.0.0 和 Gymnasium 1.4.0。两个环境通过 JSON 行和 NumPy 数组交互，仿真依赖没有进入 Jittor 训练图。
 
@@ -32,7 +32,7 @@ source /mnt/workspace/activate_flowpolicy.sh
 MUJOCO_GL=egl /mnt/workspace/venvs/flowpolicy-sim/bin/python scripts/sim_server.py
 ```
 
-## 已验证的五层证据
+## 已验证的七层证据
 
 1. 严格环境检查：
 
@@ -91,21 +91,38 @@ MUJOCO_GL=egl /mnt/workspace/venvs/flowpolicy-sim/bin/python scripts/sim_server.
      `done_reason=step_cap`；
    - 公开脱敏证据位于 `evidence/fpj033/formal/`，不含数据集、checkpoint、私有路径或密钥。
 
+7. 完整通道 target 单 seed 配对：
+
+   - commit `a24ae558`，`reach-wall-v3` seed 0；完整通道、1024 点、batch 64、30 epochs、
+     EMA 0.999、每组 1050 updates 和 20 个 200-step episode；
+   - 除 `target_mode` 与 EMA 的 loss 角色外，数据哈希、网络、优化、seed 和评测配置一致，匹配检查通过；
+   - released-code 为 10/20（50%），detached 为 6/20（30%）；策略延迟为 3.562/3.502 ms；
+   - 训练峰值显存为 11053/11741 MiB，detached 多 688 MiB；验证 loss 为 `4.85e-6`/`1.12e-4`；
+   - checkpoint 重载最大动作差为 `2.08e-5`/`1.19e-7`，不是零；所有 checkpoint 哈希已独立复核；
+   - 首次运行在 code 完成后因周期 trainer checkpoint 占满系统盘而退出；清理已关闭、已哈希的冗余
+     trainer checkpoint 后，`--reuse` 明确复用 code，只从头重跑 detached，最终返回 0；
+   - 公开脱敏证据位于 `evidence/fpj036/`。实例与运行时间见 `cloud_metadata.json`。
+
 ## 证据边界
 
 - CUDA、真实数据更新和完整通道单步现在可以声称“已验证”。
-- 可以声称完成“两个任务的论文网络结构三 seed 有限预算训练”，但不能声称完成论文 3000 epochs、
-  37 任务配方；每个任务只有 30 epochs，且未启用 detached EMA target。
+- 可以声称完成“两个任务的论文网络结构三 seed 有限预算训练”，并另行完成完整通道 target 单 seed
+  配对；不能把两者合并成三 seed target 结果，也不能声称完成论文 3000 epochs、37 任务配方。
 - 不能用一次 1-epoch rollout 计算成功率。
 - Meta-World 3.0 / MuJoCo 3.3.7 是替代仿真栈，不能声称与论文的 v2/mujoco-py 像素级一致。
 - 本机 RTX 5060 的 CUDA 要求与云端 A10 不同：本机 Blackwell 需要较新的 toolkit；A10 已在 CUDA 12.1 上通过，不应再写成所有 GPU 都必须 CUDA 12.8。
 
 ## 额度控制
 
-当前 A10 公共资源每小时消耗约 6.991 计算时。本轮先做显存/吞吐探测，再执行 3 seeds × 30 epochs ×
-20 episodes；训练和 rollout 串行，完成证据下载后立即停止实例。
+免费试用包每个周期 250 计算时，共 3 个周期。阿里云资源包使用明细中，FPJ-036 开机前最近一条
+扣减记录是 2026-11-16 07:06:49：扣减前 200.743、扣减 5.265、扣减后 **195.478 计算时**；
+实验在 07:48:50 开机，中间没有更晚的扣减记录。控制台同时提示抵扣信息可能延迟约 6 小时，因此
+195.478 是开机前的**账面余额**，不用于推算尚未出账的实际消耗。
 
-本轮设置了定时关机作为兜底，并在 2026-11-15 20:25 确认手动停止。控制台提示：免费云盘会保存环境，
-但停止后 15 天内如果没有再次启动，云盘环境将被释放。第二个任务已完成；后续如需做 detached EMA
-对照，应在保留期内启动，或从 GitHub 代码和本地证据恢复。六个最终 policy/trainer checkpoint 的
-SHA256、训练曲线和 120 个逐回合结果均已保存，checkpoint 本体不进入公开仓库。
+A10 配置页显示每小时消耗约 6.991 计算时。FPJ-036 只做一个配对 seed：首次尝试 3282 秒，清理
+磁盘后的成功恢复 1752 秒；已完成的 code 单元没有重复训练或 rollout。trainer checkpoint 单个约
+4.08 GB，独立复核哈希后删除；两组 policy checkpoint 保留在停止的系统盘，公开仓库只保存哈希。
+
+实例在 2026-11-16 09:53 确认停止。控制台提示：免费云盘会保存环境，但停止后 15 天内如果没有再次
+启动，云盘环境将被释放。当前不继续扩展 seeds 1/2；以后若决定增加统计预算，应先检查云盘是否仍在、
+剩余额度和 Git commit，再运行，不得把本次单 seed 结果先写成均值。

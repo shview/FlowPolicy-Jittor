@@ -35,7 +35,7 @@ f_t = x_t + (s-t) v_t
 L = mean(||f_t-f_r||²) + α mean(mask · ||v_t-v_r||²)
 ```
 
-公开 `FlowPolicy.compute_loss()` 用同一个当前模型计算 `v_t` 和 `v_r`，两个分支都保留梯度；论文公式则把后一个预测写成 EMA 参数。项目默认保留前者作为 `code-faithful` 基线，另提供真正分离的 detached target：target 有自己的编码器和 U-Net，全部停止梯度，只在在线 optimizer step 之后由 EMA 更新。它是待对照的训练模式，不能因为功能接通就说完整论文配方已经复现。
+公开 `FlowPolicy.compute_loss()` 用同一个当前模型计算 `v_t` 和 `v_r`，两个分支都保留梯度；论文公式则把后一个预测写成 EMA 参数。项目默认保留前者作为 `code-faithful` 基线，另提供真正分离的 detached target：target 有自己的编码器和 U-Net，全部停止梯度，只在在线 optimizer step 之后由 EMA 更新。小通道三 seed 与完整通道单 seed 对照均已完成，但这仍不是论文 3000 epochs 的完整配方。
 
 ### Q4：没有真实机械臂，复现是否成立？
 
@@ -52,7 +52,7 @@ L = mean(||f_t-f_r||²) + α mean(mask · ||v_t-v_r||²)
 - 当前已完成的 Jittor 部分：PointNet、状态编码器、Conditional U-Net、归一化器、CFM loss、顶层 policy、Zarr 数据集、训练器、AdamW、stored EMA、detached EMA target、policy/trainer checkpoint 和单步动作推理。
 - checkpoint 不只校验权重 shape，还固定本实现版本、Jittor 版本、网络、loss、NFE 和动作切片配置；保存前会从真实运行对象重建配置，加载失败会回滚，防止同一权重在 `code`/`exact` 模式下静默执行 3/4 步。
 - 已完成：真实示范训练、checkpoint 恢复、5-episode 管线 smoke、2 任务 × 3 seeds × 20 episodes 的 CPU 低预算闭环评测，以及两个任务的完整通道 A10 三 seed 有限预算训练与评测。
-- 尚未完成：论文 3000 epochs 长训练、detached 与 released-code target 的同预算正式对照，以及成功/失败视频整理。不能把 30 epochs、现代替代仿真栈或仅完成目标网络实现表述成完整论文配方复现。
+- 尚未完成：论文 3000 epochs 长训练、完整通道 target 的多 seed 统计，以及成功/失败视频整理。不能把 30 epochs、现代替代仿真栈或单 seed 云端配对表述成完整论文配方复现。
 - 非 Jittor：MuJoCo 物理引擎、MetaWorld 环境、官方专家策略、Zarr 文件读写。
 - 点云 FPS 使用 NumPy 实现；训练与仿真链路不依赖 PyTorch。PyTorch 只在隔离的 parity-env 中作为数值参照，不能把这项对照混入 Jittor 训练图。
 
@@ -129,6 +129,18 @@ Jittor 闭环可运行和任务难度差异，不能与论文成功率直接比�
 detached target 改变了优化动态，三个 seed 都未超过 code，对应更高验证 loss 和约 22.3% 的训练
 时间开销；这支持“短预算不适合直接套用该 target”，但不能外推 3000 epochs 或完整通道 GPU。
 
+**完整通道 target 配对（A10、`reach-wall-v3`、seed 0）**
+
+| target | 成功率 | 验证 loss | 训练峰值显存 | 策略延迟 |
+|---|---:|---:|---:|---:|
+| released-code + stored EMA | 10/20（50%） | 4.85e-6 | 11053 MiB | 3.562 ms |
+| detached EMA loss target | 6/20（30%） | 1.12e-4 | 11741 MiB | 3.502 ms |
+
+答辩时先说实验问题：“detached target 在完整网络上能否训练，额外需要多少显存？”再说结果。
+这次证明两组都能端到端运行，detached 训练峰值多 688 MiB；50% 对 30% 只是 seed 0 的观察，
+不能写成均值或稳定排名。两组延迟几乎相同，所以成功率差异不是由策略推理快慢造成的。code 先跑，
+承担了 JIT 编译和冷缓存成本，因此 2.13/0.91 秒每步也不能直接拿来判断算法训练速度。
+
 **A10 论文结构有限预算结果**
 
 | 任务 | 评测设置 | 成功率 | 平均策略延迟 | 峰值显存 |
@@ -154,6 +166,9 @@ detached target 改变了优化动态，三个 seed 都未超过 code，对应�
 - target 消融：`reach-wall-v3` 小通道 CPU 下，两组各 3 seeds × 20 episodes，code 为
   51.67% ± 5.77%，detached 为 16.67% ± 15.28%；`evidence/fpj035/` 保留 120 个逐回合结果与
   三组逐 seed 匹配检查（D022）；
+- 完整通道 target 配对：A10 上两组各 1 seed × 20 episodes，code 为 10/20、detached 为 6/20；
+  `evidence/fpj036/` 保留严格匹配配置、40 个逐回合结果、显存、loss、checkpoint 哈希与停机记录
+  （D023）；
 - 跨框架 parity：独立 PyTorch 镜像对 action_pred / loss / 168 个梯度做对照，
   170 项检查、最差偏差 1.6e-09（`outputs/parity/parity.json`）；
 - 全通道（512/1024/2048）CPU 单步前反向：2.55 亿参数、约 4 s/step、峰值 4.5 GB；
@@ -169,14 +184,22 @@ detached target 改变了优化动态，三个 seed 都未超过 code，对应�
 
 - **本机 CUDA 仍未配置，但云端 A10 已验证**：本机 RTX 5060 缺少适配 Blackwell 的 toolkit；
   云端 A10 使用 CUDA 12.1。CPU 实验表仍然是 CPU 结果，不能因为云端可用就改写其来源；
-- **已发布的完整通道 GPU 结果仍是 released-code target**：每个任务只有 30 epochs，未跑论文
-  3000 epochs；本地 target 消融没有回写或改变这 120 个 GPU episode 的实验口径；
+- **完整通道 target 只有一个配对 seed**：早期两个任务的三 seed GPU 表仍是 released-code target，
+  FPJ-036 另行补了 code/detached seed 0 对照；两套证据不能混成一个三 seed target 结果；
 - **EMA 需要区分用途**：默认 loss 的 `v_r` 仍由当前模型给出；只有显式
   `target_mode="detached"` 且配置 `ema_decay` 时，独立 target 才参与 loss。已完成的小通道同预算对照
   只说明短预算下 detached 更差，不是对论文完整配方的否定；
 - parity 只覆盖小配置模型，不是论文规模；
 - 仿真栈是替代实现（D016），成功率不能与论文数字直接比较；
-- 示范数量少（10/20 条）；CPU 小通道结果与 A10 完整通道结果预算不同，不能直接归因于框架或只比较百分比。
+- 示范数量少（10/20 条）；CPU 小通道结果与 A10 完整通道结果预算不同，不能直接归因于框架或只比较百分比；
+- FPJ-036 的每个 episode 都运行到 200-step cap，`success_steps` 表示成功状态出现的步数，不是首次成功时间。
+
+### “为什么云端只跑一个 seed？”
+
+这个实验的第一目标是确认 detached target 在 2.55 亿参数完整网络上的可行性和资源成本，不是重新做
+统计结论。一个配对 seed 已回答 CUDA、显存、loss、checkpoint 和闭环能否跑通；继续到三个 seed
+需要再训练四个单元，并且现有三 seed 小通道结果已经说明方差不能忽略。因此当前选择停止实例，
+如实保留“单 seed 方向性证据”，比把一个 seed 冒充稳定结论更合理。
 
 答辩时把“已验证事实 / 计划验证内容 / 推测”分开，并主动给出上面这份边界清单，
 比提前许诺论文级结果更可信；被问“为什么不宣称复现了论文指标”，照着这份清单回答即可。

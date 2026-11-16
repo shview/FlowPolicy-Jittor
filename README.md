@@ -91,13 +91,15 @@ python scripts/rollout.py --data data/reach-wall-v3.zarr \
 - [x] 完整通道（512/1024/2048）CPU 单步前反向；本机 CUDA 探测结论为不可用并留证（`outputs/cuda/report.json`）。
 - [x] 阿里云 PAI-DSW A10 环境完成真实 Jittor CUDA 检测；小通道真实数据训练和完整通道单步前反向均通过。
 - [x] 低预算实验网格：2 任务 × 3 seeds × 20 episodes，一条命令复跑（`scripts/experiments.py`，见 `outputs/experiments/`）。
-- [x] CPU 回归候选：`246 passed, 1 skipped`；主环境跳过的 PyTorch parity 已在独立 parity-env 完成 170 项检查。
+- [x] CPU 回归基线：`249 passed, 1 skipped`；主环境跳过的 PyTorch parity 已在独立 parity-env 完成 170 项检查。
 - [x] GPU 可行性验证：A10 23 GB、CUDA 12.1、Jittor 1.3.11；`reach-v3` 真实数据完成 34 次参数更新并保存 checkpoint。
 - [x] A10 论文结构有限预算实验：完整通道、3 seeds、每 seed 30 epochs + 20 个闭环 episode，配置、哈希和逐回合结果均已保存。
 - [x] `reach-wall-v3` 本地门槛：10/10 专家变体合格；20 条正式示范可确定性重录；真实数据的计划停止/恢复训练和 5-episode 闭环 smoke 已通过。
 - [x] `reach-wall-v3` A10 正式有限预算实验：完整通道、3 seeds × 20 episodes，公开脱敏证据包含训练曲线、哈希和全部逐回合记录。
 - [x] `reach-wall-v3` 小通道 CPU target 对照：released-code 与 detached EMA 使用完全匹配的
       数据、模型、seeds、710 次更新和 3 × 20 episodes，逐 seed 匹配检查与 120 个回合均已留证。
+- [x] `reach-wall-v3` A10 完整通道 target 配对：seed 0 下两组各训练 1050 步并评测 20 个
+      episode；只改变 target 语义与 EMA 角色，证据和实例停机状态均已保存。
 
 ### A10 论文结构有限预算结果（NFE=1）
 
@@ -138,9 +140,26 @@ target 语义/角色外训练配置一致。当前短预算下 detached 成功�
 设置，不能外推完整通道或论文 3000 epochs。公开脱敏记录见
 [`evidence/fpj035/manifest.json`](evidence/fpj035/manifest.json)（D022）。
 
+### 完整通道 target 配对（A10、单 seed、30 epochs）
+
+| target | 成功率 | 验证 loss | 训练峰值显存 | 单次策略推理 |
+| --- | --- | --- | --- | --- |
+| released-code + stored EMA | **10/20（50%）** | `4.85e-6` | 11053 MiB | 3.562 ms |
+| detached EMA loss target | **6/20（30%）** | `1.12e-4` | 11741 MiB | 3.502 ms |
+
+两组都使用 `reach-wall-v3`、seed 0、完整 512/1024/2048 通道、1024 点、batch 64、30 epochs、
+EMA 0.999、1050 次更新和 20 个 200-step episode；逐项匹配检查通过。detached 训练峰值显存比
+code 多 688 MiB，两组策略延迟接近，因此这次成功率差异不能用推理速度解释。验证 loss 的定义受
+target 语义影响，数值也不能直接当作跨模式的任务性能指标。
+
+这只是**一个配对 seed**：可以说明两种 target 都能在完整网络上完成训练和闭环评测，也可以报告
+本次 50% 对 30% 的观察；不能计算均值或标准差，也不能据此断言 code 普遍优于 detached。两组
+checkpoint 重载最大动作差分别为 `2.08e-5` 和 `1.19e-7`，均为小的非零误差。完整记录见
+[`evidence/fpj036/manifest.json`](evidence/fpj036/manifest.json)（D023）。
+
 当前已经完成 CPU 闭环证据链、A10 CUDA 可行性验证、两个任务的完整 512/1024/2048 通道三 seed
-有限预算训练，以及 released-code/detached target 的小通道同预算三 seed 对照。论文 3000 epochs
-配方、detached 的完整通道云端对照、原版旧仿真栈逐项对齐和
+有限预算训练、released-code/detached target 的小通道三 seed 对照，以及完整通道单 seed 配对。
+论文 3000 epochs 配方、完整通道 target 的多 seed 统计、原版旧仿真栈逐项对齐和
 成功/失败视频也尚未完成。代码已发布到
 <https://github.com/shview/FlowPolicy-Jittor>；这不改变实验边界，仍不能写成“论文成功率已复现”。
 
@@ -148,6 +167,7 @@ target 语义/角色外训练配置一致。当前短预算下 detached 成功�
 `reach-wall-v3` 的本地门槛见 [FPJ-033 preliminary bundle](evidence/fpj033/preliminary/manifest.json)，
 A10 三 seed 正式有限预算结果见 [FPJ-033 formal bundle](evidence/fpj033/formal/manifest.json)。正式包只发布
 配置、逻辑数据指纹、训练摘要、checkpoint 哈希和 60 个 episode 明细，不包含 Zarr 数据或 checkpoint 本体。
+完整通道 target 单 seed 配对见 [FPJ-036 bundle](evidence/fpj036/manifest.json)，同样不发布数据与权重。
 
 公开代码在默认 `horizon=4 / n_obs_steps=2 / n_action_steps=4` 下从索引 1 开始切动作，因此实际只返回 3 步。本项目默认保留这一 `code-faithful` 行为，同时提供显式 `action_slice_mode="exact"` 对照；不会把修正后的 4 步结果混入基线。
 
@@ -165,7 +185,9 @@ A10 三 seed 正式有限预算结果见 [FPJ-033 formal bundle](evidence/fpj033
 detached 构造阶段 RSS 比无 EMA code 模式多 3.75 MiB；JIT warm-up 后五步中位数为 53.9 ms 对 59.0 ms，
 没有测到减速（detached 分支无需为 `v_r` 保存反向图）。这个短小 CPU 探针只用于确认实现成本；正式
 真实数据对照则测到 detached 为 `0.884 ± 0.016 s/step`，code 为 `0.723 ± 0.009 s/step`。二者测量
-对象不同，不矛盾，也都不能直接外推完整通道 GPU 成本。
+对象不同，不矛盾。现在的完整通道 A10 配对实测训练峰值为 11053 MiB（code）和 11741 MiB
+（detached）；由于 code 首次运行承担 JIT 编译且 detached 复用了缓存，两者训练墙钟时间不适合用来
+判断算法速度优劣。
 
 后续训练器构造 Jittor AdamW 时必须使用 `policy.trainable_parameters()`，不能直接传 `policy.parameters()`；后者仍包含为上游 state 结构保留、但已冻结的 `var_est` 参数与 normalizer buffers。
 

@@ -326,3 +326,27 @@ rollout 与汇总都显式携带 target/EMA 配置；完成后逐 seed 删除 `t
 仿真栈也经过替换。用户已授权在本地报告封闭后进行 A10 验证；云端先跑完整通道单 seed 配对与资源
 预检，再根据剩余额度和结果决定是否扩到三 seed，不能把单 seed 云端结果冒充正式均值。
 
+## D023：完整通道 target 先做一个严格配对 seed，不追加云端统计预算
+
+**决定**：FPJ-036 在 `reach-wall-v3` 上只运行 seed 0。两组共同使用 commit `a24ae558`、同一数据
+SHA256、完整 `512/1024/2048` 通道、1024 点、batch 64、30 epochs、1050 updates、EMA 0.999、
+20 个 200-step episode 与相同 rollout noise；只允许 `target_mode` 和 EMA 的 loss 角色不同。
+自动匹配检查通过后，不因单次结果差异继续消耗云端额度扩到 seeds 1/2。
+
+**结果**：released-code + stored EMA 为 10/20（50%），detached EMA loss target 为 6/20（30%）；
+策略延迟分别为 3.562 ms 和 3.502 ms，训练峰值显存为 11053 MiB 和 11741 MiB。两组最后验证 loss
+分别为 `4.85e-6` 和 `1.12e-4`。checkpoint 重载最大动作差是 `2.08e-5` 与 `1.19e-7`，不是零。
+完整配置、40 个 episode、资源采样与哈希在 `evidence/fpj036/`。
+
+**恢复与成本记录**：首次组合运行在 code 完成后，detached 保存周期 trainer checkpoint 时因系统盘
+空间不足退出。保留已完成 code 单元，删除已安全关闭并已哈希的冗余 trainer checkpoint，再用
+`--reuse` 跳过 code、从头重跑 detached，成功返回 0。最终策略 checkpoint 保留，约 4 GB 的 trainer
+checkpoint 在独立复核哈希后删除；实例于 2026-11-16 09:53（UTC+8）确认停止。阿里云历史资源包
+流水显示，07:48 开机前最近一次扣减后的账面余额为 195.478/250 计算时；由于平台提示出账可能延迟
+约 6 小时，该值只作为当时账面额度记录，不作为未出账用量估计。
+
+**解释边界**：这证明的是完整通道下两种 target 的端到端可运行性和本次 seed 0 的观察，不提供
+均值、标准差或普遍排序。两组延迟接近，不能用推理速度解释 50%/30% 差异；两种 target 的 loss
+语义不同，也不能把 loss 比值直接解释成成功率比值。code 先运行并承担 JIT/缓存成本，因此本次墙钟
+时间不用于宣称某种 target 训练更快。
+

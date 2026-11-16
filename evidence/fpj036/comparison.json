@@ -1,0 +1,367 @@
+{
+  "cells": [
+    {
+      "checkpoint_reload": {
+        "checkpoint_fresh_policy_reload_max_abs_delta": 1.6689300537109375e-05,
+        "checkpoint_reload_max_abs_delta": 2.0802021026611328e-05,
+        "checkpoint_repeat_max_abs_delta": 1.621246337890625e-05,
+        "checkpoint_same_object_reload_max_abs_delta": 2.0802021026611328e-05
+      },
+      "done_reasons": {
+        "step_cap": 20
+      },
+      "episode_count": 20,
+      "episode_outcomes": [
+        {"done_reason": "step_cap", "episode": 0, "policy_latency_ms": {"mean": 3.528982716393805, "p95": 3.6028637000072194}, "steps": 200, "success": true, "success_steps": 69},
+        {"done_reason": "step_cap", "episode": 1, "policy_latency_ms": {"mean": 3.5649058208674878, "p95": 3.646399600120276}, "steps": 200, "success": true, "success_steps": 124},
+        {"done_reason": "step_cap", "episode": 2, "policy_latency_ms": {"mean": 3.545062731355661, "p95": 3.5963378999895212}, "steps": 200, "success": true, "success_steps": 161},
+        {"done_reason": "step_cap", "episode": 3, "policy_latency_ms": {"mean": 3.5573074178704593, "p95": 3.6100299000736413}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 4, "policy_latency_ms": {"mean": 3.5675668656623922, "p95": 3.619725000089602}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 5, "policy_latency_ms": {"mean": 3.559755417854966, "p95": 3.6158616999273363}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 6, "policy_latency_ms": {"mean": 3.550769970123797, "p95": 3.6329239998849516}, "steps": 200, "success": true, "success_steps": 166},
+        {"done_reason": "step_cap", "episode": 7, "policy_latency_ms": {"mean": 3.559567194023752, "p95": 3.6097961999530526}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 8, "policy_latency_ms": {"mean": 3.571639761225042, "p95": 3.6476081998443983}, "steps": 200, "success": true, "success_steps": 139},
+        {"done_reason": "step_cap", "episode": 9, "policy_latency_ms": {"mean": 3.56853331344501, "p95": 3.658480700141808}, "steps": 200, "success": true, "success_steps": 137},
+        {"done_reason": "step_cap", "episode": 10, "policy_latency_ms": {"mean": 3.5580290596926853, "p95": 3.6140247998446284}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 11, "policy_latency_ms": {"mean": 3.5753663133998916, "p95": 3.6285783000039373}, "steps": 200, "success": true, "success_steps": 8},
+        {"done_reason": "step_cap", "episode": 12, "policy_latency_ms": {"mean": 3.5679296865896846, "p95": 3.659142100059398}, "steps": 200, "success": true, "success_steps": 110},
+        {"done_reason": "step_cap", "episode": 13, "policy_latency_ms": {"mean": 3.5510066566720484, "p95": 3.6125070000707638}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 14, "policy_latency_ms": {"mean": 3.6078438358154967, "p95": 3.6350980999486637}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 15, "policy_latency_ms": {"mean": 3.5626457761214056, "p95": 3.6455091000789253}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 16, "policy_latency_ms": {"mean": 3.5552350448108596, "p95": 3.6234235999017983}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 17, "policy_latency_ms": {"mean": 3.571316298456989, "p95": 3.6455959999329934}, "steps": 200, "success": true, "success_steps": 164},
+        {"done_reason": "step_cap", "episode": 18, "policy_latency_ms": {"mean": 3.5526278208920696, "p95": 3.6213249999036634}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 19, "policy_latency_ms": {"mean": 3.5737952985141077, "p95": 3.6756713998784107}, "steps": 200, "success": true, "success_steps": 158}
+      ],
+      "latency_ms_mean": 3.56249434998938,
+      "process_reuse": {
+        "rollout_reused": true,
+        "train_reused": true
+      },
+      "rollout_wall_seconds": 751.5175262420003,
+      "seed": 0,
+      "status": "ok",
+      "success_episodes": 10,
+      "success_rate": 0.5,
+      "target_mode": "code",
+      "task": "reach-wall-v3",
+      "total_steps": 4000,
+      "train": {
+        "batch_size": 64,
+        "checkpoint_sha256": "f712f17c609490fa9f472093b9b87ff2ff91444aeaf8eb47921de65c548e82e3",
+        "completed_epochs": 30,
+        "config_sha256": "98035c4e3bb8693d23765eaf8eeec406e9dbe4589953da8c613854f17663b530",
+        "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+        "ema": {
+          "decay": 0.999,
+          "effective_decay": 0.9915094339622641,
+          "enabled": true,
+          "note": "EMA weights are stored in the trainer checkpoint but the released-code loss still uses the online policy for v_r.",
+          "optimization_step": 1050,
+          "role": "stored_shadow_not_used_by_loss",
+          "warmup_steps": 0
+        },
+        "loss": {
+          "first": 0.0001532531896373257,
+          "last_epoch_mean": 6.202816341880991e-06,
+          "min": 1.825464096327778e-06,
+          "val": 4.8472661546838935e-06
+        },
+        "runtime": {
+          "cpu_count": 8,
+          "device": "cuda",
+          "jittor": "1.3.11.0",
+          "nvidia_smi": "NVIDIA A10, 570.211.01, 23028",
+          "nvidia_smi_error": null,
+          "omp_num_threads": "4",
+          "platform": "Linux-5.10.134-18.0.13.lifsea8.x86_64-x86_64-with-glibc2.35",
+          "python": "3.11.11"
+        },
+        "seconds_per_step": 2.131755684206667,
+        "total_steps": 1050,
+        "trainable_parameters": 255138308,
+        "trainer_checkpoint_sha256": "7195648f98de0ad64024a47a55f66372fbbdeac6b39191e35ed1a290237d397c",
+        "wall_seconds": 2238.343468417
+      }
+    },
+    {
+      "checkpoint_reload": {
+        "checkpoint_fresh_policy_reload_max_abs_delta": 1.1920928955078125e-07,
+        "checkpoint_reload_max_abs_delta": 1.1920928955078125e-07,
+        "checkpoint_repeat_max_abs_delta": 1.1920928955078125e-07,
+        "checkpoint_same_object_reload_max_abs_delta": 1.1920928955078125e-07
+      },
+      "done_reasons": {
+        "step_cap": 20
+      },
+      "episode_count": 20,
+      "episode_outcomes": [
+        {"done_reason": "step_cap", "episode": 0, "policy_latency_ms": {"mean": 3.46858738807828, "p95": 3.5529869998754293}, "steps": 200, "success": true, "success_steps": 23},
+        {"done_reason": "step_cap", "episode": 1, "policy_latency_ms": {"mean": 3.4849480745915162, "p95": 3.5483362999002566}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 2, "policy_latency_ms": {"mean": 3.4974235820992536, "p95": 3.5463721003907267}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 3, "policy_latency_ms": {"mean": 3.5159385223601904, "p95": 3.6156082001980394}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 4, "policy_latency_ms": {"mean": 3.4929701940254474, "p95": 3.5686224996425153}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 5, "policy_latency_ms": {"mean": 3.4847307015026208, "p95": 3.5370286999750533}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 6, "policy_latency_ms": {"mean": 3.5003124179258602, "p95": 3.589898700101912}, "steps": 200, "success": true, "success_steps": 38},
+        {"done_reason": "step_cap", "episode": 7, "policy_latency_ms": {"mean": 3.516469686555458, "p95": 3.5641382995891036}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 8, "policy_latency_ms": {"mean": 3.4876324776062697, "p95": 3.5350067002582364}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 9, "policy_latency_ms": {"mean": 3.499844089606425, "p95": 3.5581221000938967}, "steps": 200, "success": true, "success_steps": 10},
+        {"done_reason": "step_cap", "episode": 10, "policy_latency_ms": {"mean": 3.499555880590555, "p95": 3.571517800082802}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 11, "policy_latency_ms": {"mean": 3.4991343283709555, "p95": 3.5796202005258237}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 12, "policy_latency_ms": {"mean": 3.5496032686031826, "p95": 3.536330699444079}, "steps": 200, "success": true, "success_steps": 49},
+        {"done_reason": "step_cap", "episode": 13, "policy_latency_ms": {"mean": 3.4867835821020905, "p95": 3.5416935000284866}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 14, "policy_latency_ms": {"mean": 3.5264318656579654, "p95": 3.54732179957864}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 15, "policy_latency_ms": {"mean": 3.490877283564178, "p95": 3.577714500352158}, "steps": 200, "success": true, "success_steps": 20},
+        {"done_reason": "step_cap", "episode": 16, "policy_latency_ms": {"mean": 3.5086940447196064, "p95": 3.611913299573643}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 17, "policy_latency_ms": {"mean": 3.498929522326911, "p95": 3.5717471002499224}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 18, "policy_latency_ms": {"mean": 3.4951297015032283, "p95": 3.570294299697707}, "steps": 200, "success": false, "success_steps": 0},
+        {"done_reason": "step_cap", "episode": 19, "policy_latency_ms": {"mean": 3.526095731402491, "p95": 3.5793562002254475}, "steps": 200, "success": true, "success_steps": 40}
+      ],
+      "latency_ms_mean": 3.501504617159624,
+      "process_reuse": {
+        "rollout_reused": false,
+        "train_reused": false
+      },
+      "rollout_wall_seconds": 719.4648862250006,
+      "seed": 0,
+      "status": "ok",
+      "success_episodes": 6,
+      "success_rate": 0.3,
+      "target_mode": "detached",
+      "task": "reach-wall-v3",
+      "total_steps": 4000,
+      "train": {
+        "batch_size": 64,
+        "checkpoint_sha256": "75e0702b521edee307057381c946f1262c9814b5594ce151bcac05f03e68f28f",
+        "completed_epochs": 30,
+        "config_sha256": "6c57753212fa3ab8d2f89046902916efd296ee301cf6e762fe081b4fd90e37c3",
+        "data_sha256": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210",
+        "ema": {
+          "decay": 0.999,
+          "effective_decay": 0.9915094339622641,
+          "enabled": true,
+          "note": "A separate frozen EMA policy supplies v_r and is saved in the trainer checkpoint; evaluation still uses the online policy.",
+          "optimization_step": 1050,
+          "role": "detached_loss_target",
+          "warmup_steps": 0
+        },
+        "loss": {
+          "first": 0.000153175467858091,
+          "last_epoch_mean": 0.00011307003774813243,
+          "min": 9.485968621447682e-05,
+          "val": 0.0001116690764320083
+        },
+        "runtime": {
+          "cpu_count": 8,
+          "device": "cuda",
+          "jittor": "1.3.11.0",
+          "nvidia_smi": "NVIDIA A10, 570.211.01, 23028",
+          "nvidia_smi_error": null,
+          "omp_num_threads": "4",
+          "platform": "Linux-5.10.134-18.0.13.lifsea8.x86_64-x86_64-with-glibc2.35",
+          "python": "3.11.11"
+        },
+        "seconds_per_step": 0.9116916391028576,
+        "total_steps": 1050,
+        "trainable_parameters": 255138308,
+        "trainer_checkpoint_sha256": "a07ab52e01bd9ddd26492d8009f4dc212ac6fa61b1ca43b961fa88adca5188d7",
+        "wall_seconds": 957.2762210580004
+      }
+    }
+  ],
+  "checkpoint_files": {
+    "actual_after_run": {
+      "code_policy": {
+        "sha256": "f712f17c609490fa9f472093b9b87ff2ff91444aeaf8eb47921de65c548e82e3",
+        "size_bytes": 1022683820
+      },
+      "detached_policy": {
+        "sha256": "75e0702b521edee307057381c946f1262c9814b5594ce151bcac05f03e68f28f",
+        "size_bytes": 1022683824
+      },
+      "detached_trainer": {
+        "sha256": "a07ab52e01bd9ddd26492d8009f4dc212ac6fa61b1ca43b961fa88adca5188d7",
+        "size_bytes": 4086499763
+      }
+    },
+    "all_recorded_hashes_match": true,
+    "code_before_cleanup": {
+      "policy.ckpt": {
+        "sha256": "f712f17c609490fa9f472093b9b87ff2ff91444aeaf8eb47921de65c548e82e3",
+        "size_bytes": 1022683820
+      },
+      "trainer.ckpt": {
+        "sha256": "7195648f98de0ad64024a47a55f66372fbbdeac6b39191e35ed1a290237d397c",
+        "size_bytes": 4084376484
+      }
+    }
+  },
+  "claim_boundary": [
+    "This is a paired comparison at seed 0 only; it does not provide mean or standard deviation across seeds.",
+    "It tests the selected reach-wall-v3 task and does not reproduce paper-scale multi-task success rates.",
+    "The observed 50% versus 30% success rates are run-specific evidence, not proof that one target semantic is generally superior.",
+    "All episodes intentionally run to the 200-step cap; success_steps counts successful observations and is not an early-stop time."
+  ],
+  "config": {
+    "batch_size": 64,
+    "checkpoint_every": 5,
+    "data_dir": "$FLOWPOLICY_DATA_DIR",
+    "device": "cuda",
+    "down_dims": [512, 1024, 2048],
+    "ema_decay": 0.999,
+    "ema_warmup_steps": 0,
+    "embed_dim": 128,
+    "encoder_out": 64,
+    "episodes": 20,
+    "epochs": 30,
+    "kernel_size": 5,
+    "max_steps": 200,
+    "n_groups": 8,
+    "num_points": 1024,
+    "pointnet_out": 64,
+    "run_label": "fpj036-a10-full-channels-paired-target-seed0",
+    "seeds": [0],
+    "target_modes": ["code", "detached"],
+    "tasks": ["reach-wall-v3"],
+    "threads": 4,
+    "var_fc_hidden_dim": 512
+  },
+  "evidence_status": "full-channel NVIDIA A10 paired target-semantics comparison; one seed only",
+  "git_commit": "a24ae5581aa28969b4cbe2c8dfa052145b750cf0",
+  "gpu_peak_summary": {
+    "code_rollout": {"peak_gpu_util_percent": 100, "peak_memory_used_mib": 8721, "samples": 722},
+    "code_train": {"peak_gpu_util_percent": 99, "peak_memory_used_mib": 11053, "samples": 1825},
+    "detached_rollout": {"peak_gpu_util_percent": 63, "peak_memory_used_mib": 8721, "samples": 680},
+    "detached_train": {"peak_gpu_util_percent": 97, "peak_memory_used_mib": 11741, "samples": 799}
+  },
+  "matched_validation": {
+    "applicable": true,
+    "pairs": [
+      {
+        "base_mode": "code",
+        "checks": {
+          "code_vs_detached": {
+            "details": {
+              "data_sha256_equal": true,
+              "episode_count_equal": true,
+              "rollout_protocol_equal": true,
+              "target_mode_differs": true,
+              "total_steps_equal": true,
+              "train_windows_equal": true,
+              "training_config_except_target_equal": true
+            },
+            "passed": true,
+            "shared_training_config_sha256": "0b7aa848a2068c55150090db0e463a44ba3deaa041098e2203483b1827a3474c"
+          }
+        },
+        "seed": 0,
+        "task": "reach-wall-v3"
+      }
+    ],
+    "passed": true
+  },
+  "preflight": {
+    "arms": {
+      "code": {"ema_role": "stored_shadow_not_used_by_loss", "target_mode": "code"},
+      "detached": {"ema_role": "detached_loss_target", "target_mode": "detached"}
+    },
+    "intended_differences": ["target_mode", "ema_role/target implementation"],
+    "passed": true,
+    "shared_config": {
+      "action_slice_mode": "code",
+      "batch_size": 64,
+      "checkpoint_every": 5,
+      "data_sha256": {"reach-wall-v3": "01e4a0128cbce3c8ab85c0c44daaeb8030af4d613cd20d1708e07d421dcfd210"},
+      "device": "cuda",
+      "down_dims": [512, 1024, 2048],
+      "ema_decay": 0.999,
+      "ema_warmup_steps": 0,
+      "embed_dim": 128,
+      "encoder_out": 64,
+      "episodes": 20,
+      "epochs": 30,
+      "kernel_size": 5,
+      "lr": 0.001,
+      "max_steps": 200,
+      "n_groups": 8,
+      "nfe": 1,
+      "num_points": 1024,
+      "pointnet_out": 64,
+      "rollout_noise_seed_rule": "same as training seed",
+      "seeds": [0],
+      "tasks": ["reach-wall-v3"],
+      "threads": 4,
+      "var_fc_hidden_dim": 512,
+      "warmup": 20
+    },
+    "shared_config_sha256": "5799547160ad2d21f90ac1072802978c6717d27cc86690888e942d13c3e2ecac"
+  },
+  "prohibited_claims": [
+    "paper success rate reproduced",
+    "the best cell is the result",
+    "paper architecture equals the full paper training recipe",
+    "small-channel CPU comparison predicts full-channel GPU behavior"
+  ],
+  "recovery_note": "The initial combined run completed the code cell, then the detached cell hit ENOSPC while saving a periodic trainer checkpoint. The completed code cell was retained; redundant periodic trainer checkpoints were removed; the detached cell was rerun with --reuse so code training and rollout were not repeated. The successful resume returned 0.",
+  "schema_version": 1,
+  "target_modes": ["code", "detached"],
+  "targets": {
+    "code": {
+      "tasks": {
+        "reach-wall-v3": {
+          "cells_failed": 0,
+          "cells_ok": 1,
+          "done_reasons": {"step_cap": 20},
+          "episodes_per_seed": [20],
+          "latency_ms_mean": 3.56249434998938,
+          "nfe": [1],
+          "num_points": [1024],
+          "seeds": [0],
+          "success_rate_mean": 0.5,
+          "success_rate_per_seed": [0.5],
+          "success_rate_std": null,
+          "train_last_epoch_loss": {"mean": 6.202816341880991e-06, "std": null},
+          "train_seconds_per_step": {"mean": 2.131755684206667, "std": null},
+          "validation_loss": {"mean": 4.8472661546838935e-06, "std": null}
+        }
+      }
+    },
+    "detached": {
+      "tasks": {
+        "reach-wall-v3": {
+          "cells_failed": 0,
+          "cells_ok": 1,
+          "done_reasons": {"step_cap": 20},
+          "episodes_per_seed": [20],
+          "latency_ms_mean": 3.501504617159624,
+          "nfe": [1],
+          "num_points": [1024],
+          "seeds": [0],
+          "success_rate_mean": 0.3,
+          "success_rate_per_seed": [0.3],
+          "success_rate_std": null,
+          "train_last_epoch_loss": {"mean": 0.00011307003774813243, "std": null},
+          "train_seconds_per_step": {"mean": 0.9116916391028576, "std": null},
+          "validation_loss": {"mean": 0.0001116690764320083, "std": null}
+        }
+      }
+    }
+  },
+  "timing": {
+    "initial_attempt": {
+      "elapsed_seconds": 3282,
+      "end_time": "2026-11-16T08:57:16+08:00",
+      "experiment_returncode": 1,
+      "start_time": "2026-11-16T08:02:34+08:00"
+    },
+    "successful_resume": {
+      "commit": "a24ae5581aa28969b4cbe2c8dfa052145b750cf0",
+      "disk_free_bytes": 26661359616,
+      "elapsed_seconds": 1752,
+      "end_time": "2026-11-16T09:39:03+08:00",
+      "return_code": 0,
+      "start_time": "2026-11-16T09:09:51+08:00"
+    }
+  }
+}
+

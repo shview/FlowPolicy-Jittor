@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "cloud": {
+    "platform": "Alibaba Cloud PAI-DSW",
+    "region": "cn-shanghai",
+    "instance_name": "flowpolicy-jittor",
+    "instance_identifier": "redacted_in_public_bundle",
+    "resource_type": "public_resource",
+    "final_state": "stopped",
+    "started_at": "2026-11-16T07:48:50+08:00",
+    "stopped_state_confirmed_at": "2026-11-16T09:53:44+08:00",
+    "stopped_disk_retention_notice_days": 15
+  },
+  "free_quota_before_start": {
+    "package": "Alibaba Cloud DSW free-trial resource deduction package",
+    "capacity_per_cycle_calculation_hours": 250.0,
+    "trial_cycles": 3,
+    "experiment_started_at": "2026-11-16T07:48:50+08:00",
+    "latest_ledger_entry_before_start": {
+      "deduction_recorded_at": "2026-11-16T07:06:49+08:00",
+      "balance_before_calculation_hours": 200.743,
+      "deducted_calculation_hours": 5.265,
+      "balance_after_calculation_hours": 195.478
+    },
+    "source": "Authenticated Alibaba Cloud resource-package usage ledger, checked after the run; no later ledger entry precedes the experiment start.",
+    "billing_lag_caveat": "The console states that deduction records may lag resource use by about six hours. 195.478 is therefore the provider-recorded ledger balance before start, not an estimate of unbilled consumption."
+  },
+  "hardware": {
+    "gpu": "NVIDIA A10",
+    "gpu_count": 1,
+    "gpu_memory_mib": 23028,
+    "cpu_vcpus": 8,
+    "memory_gib": 30,
+    "system_disk_gib": 100
+  },
+  "runtime": {
+    "python": "3.11.11",
+    "jittor": "1.3.11.0",
+    "cuda": "12.1.105",
+    "driver": "570.211.01",
+    "image": "modelscope:1.40.1-pytorch2.3.1tensorflow2.16.1-gpu-py311-cu121-ubuntu22.04"
+  },
+  "experiment": {
+    "git_commit": "a24ae5581aa28969b4cbe2c8dfa052145b750cf0",
+    "initial_attempt": {
+      "started_at": "2026-11-16T08:02:34+08:00",
+      "ended_at": "2026-11-16T08:57:16+08:00",
+      "elapsed_seconds": 3282,
+      "return_code": 1,
+      "failure": "ENOSPC while saving a detached periodic trainer checkpoint after the code arm completed"
+    },
+    "successful_resume": {
+      "started_at": "2026-11-16T09:09:51+08:00",
+      "ended_at": "2026-11-16T09:39:03+08:00",
+      "elapsed_seconds": 1752,
+      "return_code": 0,
+      "reuse": "completed code training and rollout were reused; detached was rerun from the beginning"
+    }
+  },
+  "cleanup": {
+    "periodic_trainer_checkpoints_removed_after_hashing": true,
+    "final_trainer_checkpoints_removed_after_hashing": true,
+    "final_policy_checkpoints_retained_on_stopped_disk": true,
+    "disk_free_bytes_after_cleanup": 30747803648
+  },
+  "claim_boundary": "The timestamps and stopped state document resource use only. Scientific results and hashes are in comparison.json; this one-seed run is not a multi-seed estimate."
+}

@@ -209,6 +209,11 @@ A10 上使用完整 `512/1024/2048` 通道、255,138,308 个可训练参数、10
 不同，且 detached EMA target 未启用。`button-press-wall-v3` 的满分提示天花板效应，
 `reach-wall-v3` 则提供失败样本和稳定性问题，二者结合比单独报告最高成功率更有解释力。
 
+随后在 `reach-wall-v3` 上完成完整通道 target 单 seed 严格配对：seed 0、batch 64、30 epochs、
+1050 updates、EMA 0.999 和每组 20 episodes。released-code 为 10/20，detached 为 6/20；训练峰值
+显存为 11053/11741 MiB，策略延迟为 3.562/3.502 ms。该实验补上了 detached 的完整通道 CUDA
+可行性，但只有一个 seed，不能与上面的三 seed 表采用同一统计口径。
+
 ### 任务安排
 
 - CPU 低预算网格：`button-press-wall-v3` 与 `reach-v3`，保留作为早期闭环和脚本验证证据。
@@ -241,8 +246,8 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
 - [x] target 消融：在完全相同的 `reach-wall-v3` 数据、seeds 0/1/2、1024 点、小通道模型、batch 32、
   10 epochs（710 updates/seed）和 20 episodes/seed 下，对比 released-code + stored EMA 与 detached
   EMA loss target。结果为 51.67% ± 5.77% 对 16.67% ± 15.28%；逐 seed 匹配检查全部通过。
-- 下一步：按用户授权在 A10 上先做完整通道单 seed 配对预检，记录显存、训练耗时和闭环结果；本地
-  结果不能预言完整通道 GPU 结论。
+- [x] A10 完整通道单 seed 配对：只改变 target 语义与 EMA 角色，记录显存、训练耗时、loss、哈希、
+  checkpoint 重载误差和 40 个闭环结果；本次 seed 0 为 50% 对 30%，不作为多 seed 均值。
 
 ### 验证清单
 
@@ -257,6 +262,8 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
       逐 episode 记录、训练曲线和哈希，不包含数据集、checkpoint、私有路径或密钥。
 - [x] target 对照完成 2 modes × 3 seeds × 20 episodes；`evidence/fpj035/` 保留共享配置哈希、逐 seed
       训练/验证/资源指标、匹配校验和全部 120 个 episode，不包含原始输出或 checkpoint。
+- [x] target 完整通道 A10 配对完成 2 modes × 1 seed × 20 episodes；`evidence/fpj036/` 保留配对检查、
+      资源指标、hash、全部 40 个 episode 与实例停机记录，并明确单 seed 不提供均值或标准差。
 
 ### 防止走偏
 
@@ -286,7 +293,7 @@ python scripts/experiments.py --tasks reach-v3 button-press-wall-v3 \
 ## 8. 最终验收
 
 - [ ] 新机器按 README 能建立环境。
-- [x] Jittor 主环境测试 `246 passed, 1 skipped`；跳过的 PyTorch 模块由独立 parity-env 的 170 项检查覆盖，但不计作主测试 passed。
+- [x] Jittor 主环境测试 `249 passed, 1 skipped`；跳过的 PyTorch 模块由独立 parity-env 的 170 项检查覆盖，但不计作主测试 passed。
 - [x] 一条命令生成示范，一条命令训练，一条命令评测。
 - [x] 模型训练和推理确认使用 Jittor。
 - [x] 两个任务的低预算结果可追溯到配置、seed、checkpoint 和日志。
